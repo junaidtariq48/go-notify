@@ -1,10 +1,7 @@
 package workers
 
 import (
-	"encoding/json"
-	"log"
 	"notify/config"
-	"notify/models"
 	"notify/queues"
 	"notify/repositories"
 	"notify/services"
@@ -12,7 +9,6 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/sirupsen/logrus"
-	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -50,7 +46,7 @@ func StartEmailWorker(redisClient *redis.Client, db *mongo.Client) {
 		} else {
 			config.Logger.WithFields(logrus.Fields{
 				"notification_id": notification.ID,
-			}).Info("Email sent successfully")
+			}).Info("Email sent successfully", notification.ID)
 			_ = repo.UpdateNotificationStatus(notification.ID, "success")
 		}
 	}
@@ -168,73 +164,73 @@ func StartWhatsAppWorker(redisClient *redis.Client, db *mongo.Client) {
 	}
 }
 
-// Worker to process Redis and RabbitMQ queues
-func StartWorker(redisClient *redis.Client, rabbitMQChannel *amqp.Channel, queueName string, notificationType string, useRabbitMQ bool) {
-	if useRabbitMQ {
-		// RabbitMQ queue worker
-		log.Printf("Worker started for RabbitMQ queue: %s", queueName)
-		msgs, err := queues.DequeueRabbitMQ(rabbitMQChannel, queueName)
-		if err != nil {
-			log.Fatalf("Failed to consume from RabbitMQ queue: %s", err)
-		}
+// // Worker to process Redis and RabbitMQ queues
+// func StartWorker(redisClient *redis.Client, rabbitMQChannel *amqp.Channel, queueName string, notificationType string, useRabbitMQ bool) {
+// 	if useRabbitMQ {
+// 		// RabbitMQ queue worker
+// 		log.Printf("Worker started for RabbitMQ queue: %s", queueName)
+// 		msgs, err := queues.DequeueRabbitMQ(rabbitMQChannel, queueName)
+// 		if err != nil {
+// 			log.Fatalf("Failed to consume from RabbitMQ queue: %s", err)
+// 		}
 
-		for msg := range msgs {
-			var notification models.Notification
-			err := json.Unmarshal(msg.Body, &notification)
-			if err != nil {
-				log.Printf("Failed to unmarshal message: %s", err)
-				continue
-			}
+// 		for msg := range msgs {
+// 			var notification models.Notification
+// 			err := json.Unmarshal(msg.Body, &notification)
+// 			if err != nil {
+// 				log.Printf("Failed to unmarshal message: %s", err)
+// 				continue
+// 			}
 
-			processNotification(notification, notificationType)
-		}
-	} else {
-		// Redis queue worker
-		log.Printf("Worker started for Redis queue: %s", queueName)
-		for {
-			notification, err := queues.DequeueNotification(redisClient, queueName)
-			if err != nil {
-				log.Printf("Error dequeuing notification: %s", err)
-				continue
-			}
+// 			processNotification(notification, notificationType)
+// 		}
+// 	} else {
+// 		// Redis queue worker
+// 		log.Printf("Worker started for Redis queue: %s", queueName)
+// 		for {
+// 			notification, err := queues.DequeueNotification(redisClient, queueName)
+// 			if err != nil {
+// 				log.Printf("Error dequeuing notification: %s", err)
+// 				continue
+// 			}
 
-			processNotification(notification, notificationType)
-		}
-	}
-}
+// 			processNotification(notification, notificationType)
+// 		}
+// 	}
+// }
 
-// Function to process the notification based on type
-func processNotification(notification models.Notification, notificationType string) {
-	switch notificationType {
-	case "email":
-		err := services.SendEmail(notification)
-		if err != nil {
-			log.Printf("Failed to send email: %s", err)
-		} else {
-			log.Println("Email sent successfully")
-		}
-	case "sms":
-		err := services.SendSMS(notification)
-		if err != nil {
-			log.Printf("Failed to send SMS: %s", err)
-		} else {
-			log.Println("SMS sent successfully")
-		}
-	case "push":
-		err := services.SendPushNotification(notification)
-		if err != nil {
-			log.Printf("Failed to send push notification: %s", err)
-		} else {
-			log.Println("Push notification sent successfully")
-		}
-	case "whatsapp":
-		err := services.SendWhatsappNotification(notification)
-		if err != nil {
-			log.Printf("Failed to send WhatsApp message: %s", err)
-		} else {
-			log.Println("WhatsApp message sent successfully")
-		}
-	default:
-		log.Printf("Unknown notification type: %s", notificationType)
-	}
-}
+// // Function to process the notification based on type
+// func processNotification(notification *models.Notification, notificationType string) {
+// 	switch notificationType {
+// 	case "email":
+// 		err := services.SendEmail(*notification)
+// 		if err != nil {
+// 			log.Printf("Failed to send email: %s", err)
+// 		} else {
+// 			log.Println("Email sent successfully")
+// 		}
+// 	case "sms":
+// 		err := services.SendSMS(*notification)
+// 		if err != nil {
+// 			log.Printf("Failed to send SMS: %s", err)
+// 		} else {
+// 			log.Println("SMS sent successfully")
+// 		}
+// 	case "push":
+// 		err := services.SendPushNotification(*notification)
+// 		if err != nil {
+// 			log.Printf("Failed to send push notification: %s", err)
+// 		} else {
+// 			log.Println("Push notification sent successfully")
+// 		}
+// 	case "whatsapp":
+// 		err := services.SendWhatsApp(*notification)
+// 		if err != nil {
+// 			log.Printf("Failed to send WhatsApp message: %s", err)
+// 		} else {
+// 			log.Println("WhatsApp message sent successfully")
+// 		}
+// 	default:
+// 		log.Printf("Unknown notification type: %s", notificationType)
+// 	}
+// }

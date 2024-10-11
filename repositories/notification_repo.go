@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"notify/models"
 	"time"
@@ -36,13 +37,28 @@ func (r *NotificationRepository) SaveNotification(notification *models.Notificat
 
 // UpdateNotificationStatus updates the status of a notification
 func (r *NotificationRepository) UpdateNotificationStatus(id string, status string) error {
-	filter := bson.M{"_id": id}
+	// // idString := "ObjectID(\"670903ec6d2a96f739a4e9e6\")"
+	// idString := strings.Trim(strings.TrimPrefix(id, "ObjectID("), "\")")
+
+	// // Convert string ID to ObjectID
+	// // id, err := primitive.ObjectIDFromHex(idString)
+	// // if err != nil {
+	// // 	log.Fatal(err)
+	// // }
+
+	objectID, errr := primitive.ObjectIDFromHex(id)
+	if errr != nil {
+		log.Fatal(errr)
+	}
+
+	filter := bson.M{"_id": objectID}
 	update := bson.M{
 		"$set": bson.M{
 			"status":     status,
 			"updated_at": time.Now(),
 		},
 	}
+	fmt.Println(filter)
 	_, err := r.Collection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		log.Println("Failed to update notification status:", err)

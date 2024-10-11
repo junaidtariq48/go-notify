@@ -1,0 +1,5 @@
+# Redis
+docker run --name redis -p 6379:6379 -d redis
+
+# MongoDB
+docker run --name mongodb -p 27017:27017 -d mongo

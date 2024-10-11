@@ -1,16 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"notify/config"
 	"notify/controllers"
-	"notify/models"
-	"notify/queues"
 	"notify/workers"
-
-	"github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -24,14 +19,14 @@ func main() {
 	redisClient := config.InitRedis(cfg)
 
 	// Initialize RabbitMQ connection
-	rabbitMQConn := config.InitRabbitMQ()
-	defer rabbitMQConn.Close()
+	// rabbitMQConn := config.InitRabbitMQ()
+	// defer rabbitMQConn.Close()
 
-	rabbitMQChannel, err := rabbitMQConn.Channel()
-	if err != nil {
-		log.Fatalf("Failed to open RabbitMQ channel: %s", err)
-	}
-	defer rabbitMQChannel.Close()
+	// rabbitMQChannel, err := rabbitMQConn.Channel()
+	// if err != nil {
+	// 	log.Fatalf("Failed to open RabbitMQ channel: %s", err)
+	// }
+	// defer rabbitMQChannel.Close()
 
 	// Start workers for each notification type
 	go workers.StartEmailWorker(redisClient, db)
@@ -40,32 +35,33 @@ func main() {
 	// go workers.StartWhatsAppWorker(redisClient, db)
 
 	// Example payload as map
-	payload := map[string]interface{}{
-		"to":      "test@example.com",
-		"subject": "Welcome!",
-		"body":    "Welcome to our platform!",
-	}
+	// payload := map[string]interface{}{
+	// 	"to":      "test@example.com",
+	// 	"subject": "Welcome!",
+	// 	"body":    "Welcome to our platform!",
+	// }
 
-	// Convert map to JSON string
-	payloadJSON, errr := json.Marshal(payload)
-	if errr != nil {
-		log.Fatalf("Failed to marshal payload: %v", errr)
-	}
+	// // Convert map to JSON string
+	// payloadJSON, errr := json.Marshal(payload)
+	// if errr != nil {
+	// 	log.Fatalf("Failed to marshal payload: %v", errr)
+	// }
 
-	// Example Notification
-	emailNotification := models.Notification{
-		Type:     "email",
-		Provider: "sendgrid",
-		Payload:  string(payloadJSON),
-	}
+	// // Example Notification
+	// emailNotification := models.Notification{
+	// 	Type:     "email",
+	// 	Provider: "sendgrid",
+	// 	Payload:  string(payloadJSON),
+	// }
 
-	logrus.Info(emailNotification)
+	// logrus.Info(emailNotification)
 
-	// Enqueue Notification to Redis
-	err := queues.EnqueueNotification("email", emailNotification)
-	if err != nil {
-		log.Fatalf("Failed to enqueue notification: %v", err)
-	}
+	// // Enqueue Notification to Redis
+	// err := queues.EnqueueNotification("email", emailNotification)
+	// // err := queues.EnqueueNotification("email", emailNotification)
+	// if err != nil {
+	// 	log.Fatalf("Failed to enqueue notification: %v", err)
+	// }
 
 	// Initialize HTTP server
 	// router := controllers.InitRouter()

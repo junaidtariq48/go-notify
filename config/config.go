@@ -31,8 +31,12 @@ func LoadConfig() Config {
 
 // InitMongo initializes a MongoDB connection and returns the client
 func InitMongo(cfg Config) *mongo.Client {
-	mongoURI := os.Getenv("MONGO_URI")
-	clientOptions := options.Client().ApplyURI(mongoURI)
+	// mongoURI := os.Getenv("MONGO_URI")
+	clientOptions := options.Client().ApplyURI(cfg.MongoURI).SetAuth(options.Credential{
+		AuthSource: "admin",
+		Username:   "root",
+		Password:   "root",
+	})
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
@@ -50,8 +54,8 @@ func InitMongo(cfg Config) *mongo.Client {
 
 // InitRedis initializes a Redis client
 func InitRedis(cfg Config) *redis.Client {
-	redisAddr := os.Getenv("REDIS_ADDR")
-	redisPassword := os.Getenv("REDIS_PASSWORD")
+	redisAddr := cfg.RedisAddr
+	redisPassword := cfg.RedisPass
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     redisAddr,
 		Password: redisPassword, // No password set

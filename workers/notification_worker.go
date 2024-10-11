@@ -198,7 +198,7 @@ func StartWorker(redisClient *redis.Client, rabbitMQChannel *amqp.Channel, queue
 				continue
 			}
 
-			processNotification(&notification, notificationType)
+			processNotification(notification, notificationType)
 		}
 	}
 }

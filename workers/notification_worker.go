@@ -1,6 +1,7 @@
 package workers
 
 import (
+	"context"
 	"notify/config"
 	"notify/queues"
 	"notify/repositories"
@@ -15,8 +16,10 @@ import (
 // StartNotificationWorker processes email notifications from the Redis queue
 func StartNotificationWorker(redisClient *redis.Client, db *mongo.Client) {
 	repo := repositories.NewNotificationRepository(db)
+	ctx := context.Background()
+
 	for {
-		notification, err := queues.DequeueNotification("notifications_queue")
+		notification, err := queues.DequeueNotification(ctx, redisClient, "notifications_queue")
 		if err != nil {
 			config.Logger.WithError(err).Error("Error dequeuing notifications")
 			time.Sleep(1 * time.Second)
@@ -35,7 +38,7 @@ func StartNotificationWorker(redisClient *redis.Client, db *mongo.Client) {
 		notification.UpdatedAt = time.Now()
 
 		// Save the notification to MongoDB
-		insertedID, err := repo.SaveNotification(notification)
+		insertedID, err := repo.SaveNotification(ctx, notification)
 		if err != nil {
 			config.Logger.WithFields(logrus.Fields{
 				"type":         notification.Type,
@@ -70,7 +73,7 @@ func StartNotificationWorker(redisClient *redis.Client, db *mongo.Client) {
 			config.Logger.WithError(err).Error("unsupported notificaiton type")
 		}
 
-		err = queues.EnqueueNotification(queueName, *notification)
+		err = queues.EnqueueNotification(ctx, queueName, *notification)
 
 		if err != nil {
 			config.Logger.WithError(err).Error("Failed to enqueue notification")
@@ -80,32 +83,19 @@ func StartNotificationWorker(redisClient *redis.Client, db *mongo.Client) {
 			"notification_id": notification.ID,
 			"queue_name":      queueName,
 		}).Info("Notification enqueued successfully")
-
-		// process the notification
-		// err = services.ProcessNotification(db, redisClient, *notification)
-		// if err != nil {
-		// 	config.Logger.WithFields(logrus.Fields{
-		// 		"notification_id": notification.ID,
-		// 		"error":           err,
-		// 	}).Error("Failed to process notification")
-		// 	// _ = repo.UpdateNotificationStatus(notification.ID, "failed")
-		// } else {
-		// 	config.Logger.WithFields(logrus.Fields{
-		// 		"notification_id": notification.ID,
-		// 	}).Info("Notification process successfully", notification.ID)
-		// 	// _ = repo.UpdateNotificationStatus(notification.ID, "success")
-		// }
 	}
 }
 
-// StartEmailWorker processes email notifications from the Redis queue
 func StartEmailWorker(redisClient *redis.Client, db *mongo.Client) {
 	repo := repositories.NewNotificationRepository(db)
+	ctx := context.Background()
 
 	for {
-		notification, err := queues.DequeueNotification("email")
+		notification, err := queues.DequeueNotification(ctx, redisClient, "email")
 		if err != nil {
-			config.Logger.WithError(err).Error("Error dequeuing email notification")
+			if err != redis.Nil {
+				config.Logger.WithError(err).Error("Error dequeuing email notification")
+			}
 			time.Sleep(1 * time.Second)
 			continue
 		}
@@ -122,133 +112,133 @@ func StartEmailWorker(redisClient *redis.Client, db *mongo.Client) {
 		}).Info("Processing email notification")
 
 		// Send email using the entire notification object
-		err = services.SendEmail(*notification)
+		err = services.SendEmail(ctx, *notification)
 		if err != nil {
 			config.Logger.WithFields(logrus.Fields{
 				"notification_id": notification.ID,
 				"error":           err,
 			}).Error("Failed to send email")
-			_ = repo.UpdateNotificationStatus(notification.ID, "failed")
+			_ = repo.UpdateNotificationStatus(ctx, notification.ID, "failed")
 		} else {
 			config.Logger.WithFields(logrus.Fields{
 				"notification_id": notification.ID,
-			}).Info("Email sent successfully", notification.ID)
-			_ = repo.UpdateNotificationStatus(notification.ID, "success")
+			}).Info("Email sent successfully")
+			_ = repo.UpdateNotificationStatus(ctx, notification.ID, "success")
 		}
 	}
 }
 
-func StartSMSWorker(redisClient *redis.Client, db *mongo.Client) {
-	repo := repositories.NewNotificationRepository(db)
+// func StartSMSWorker(redisClient *redis.Client, db *mongo.Client) {
+// 	repo := repositories.NewNotificationRepository(db)
 
-	for {
-		notification, err := queues.DequeueNotification("sms")
-		if err != nil {
-			config.Logger.WithError(err).Error("Error dequeuing SMS notification")
-			time.Sleep(1 * time.Second)
-			continue
-		}
+// 	for {
+// 		notification, err := queues.DequeueNotification("sms")
+// 		if err != nil {
+// 			config.Logger.WithError(err).Error("Error dequeuing SMS notification")
+// 			time.Sleep(1 * time.Second)
+// 			continue
+// 		}
 
-		if notification == nil {
-			time.Sleep(1 * time.Second)
-			continue
-		}
+// 		if notification == nil {
+// 			time.Sleep(1 * time.Second)
+// 			continue
+// 		}
 
-		config.Logger.WithFields(logrus.Fields{
-			"notification_id": notification.ID,
-			"provider":        notification.Provider,
-		}).Info("Processing SMS notification")
+// 		config.Logger.WithFields(logrus.Fields{
+// 			"notification_id": notification.ID,
+// 			"provider":        notification.Provider,
+// 		}).Info("Processing SMS notification")
 
-		// Send SMS using the entire notification object
-		err = services.SendSMS(*notification)
-		if err != nil {
-			config.Logger.WithFields(logrus.Fields{
-				"notification_id": notification.ID,
-				"error":           err,
-			}).Error("Failed to send SMS")
-			_ = repo.UpdateNotificationStatus(notification.ID, "failed")
-		} else {
-			config.Logger.WithFields(logrus.Fields{
-				"notification_id": notification.ID,
-			}).Info("SMS sent successfully")
-			_ = repo.UpdateNotificationStatus(notification.ID, "success")
-		}
-	}
-}
+// 		// Send SMS using the entire notification object
+// 		err = services.SendSMS(*notification)
+// 		if err != nil {
+// 			config.Logger.WithFields(logrus.Fields{
+// 				"notification_id": notification.ID,
+// 				"error":           err,
+// 			}).Error("Failed to send SMS")
+// 			_ = repo.UpdateNotificationStatus(notification.ID, "failed")
+// 		} else {
+// 			config.Logger.WithFields(logrus.Fields{
+// 				"notification_id": notification.ID,
+// 			}).Info("SMS sent successfully")
+// 			_ = repo.UpdateNotificationStatus(notification.ID, "success")
+// 		}
+// 	}
+// }
 
-func StartPushWorker(redisClient *redis.Client, db *mongo.Client) {
-	repo := repositories.NewNotificationRepository(db)
+// func StartPushWorker(redisClient *redis.Client, db *mongo.Client) {
+// 	repo := repositories.NewNotificationRepository(db)
 
-	for {
-		notification, err := queues.DequeueNotification("push")
-		if err != nil {
-			config.Logger.WithError(err).Error("Error dequeuing push notification")
-			time.Sleep(1 * time.Second)
-			continue
-		}
+// 	for {
+// 		notification, err := queues.DequeueNotification("push")
+// 		if err != nil {
+// 			config.Logger.WithError(err).Error("Error dequeuing push notification")
+// 			time.Sleep(1 * time.Second)
+// 			continue
+// 		}
 
-		if notification == nil {
-			time.Sleep(1 * time.Second)
-			continue
-		}
+// 		if notification == nil {
+// 			time.Sleep(1 * time.Second)
+// 			continue
+// 		}
 
-		config.Logger.WithFields(logrus.Fields{
-			"notification_id": notification.ID,
-			"provider":        notification.Provider,
-		}).Info("Processing push notification")
+// 		config.Logger.WithFields(logrus.Fields{
+// 			"notification_id": notification.ID,
+// 			"provider":        notification.Provider,
+// 		}).Info("Processing push notification")
 
-		err = services.SendPushNotification(*notification)
-		if err != nil {
-			config.Logger.WithFields(logrus.Fields{
-				"notification_id": notification.ID,
-				"error":           err,
-			}).Error("Failed to send push notification")
-			_ = repo.UpdateNotificationStatus(notification.ID, "failed")
-		} else {
-			config.Logger.WithFields(logrus.Fields{
-				"notification_id": notification.ID,
-			}).Info("Push notification sent successfully")
-			_ = repo.UpdateNotificationStatus(notification.ID, "success")
-		}
-	}
-}
+// 		err = services.SendPushNotification(*notification)
+// 		if err != nil {
+// 			config.Logger.WithFields(logrus.Fields{
+// 				"notification_id": notification.ID,
+// 				"error":           err,
+// 			}).Error("Failed to send push notification")
+// 			_ = repo.UpdateNotificationStatus(notification.ID, "failed")
+// 		} else {
+// 			config.Logger.WithFields(logrus.Fields{
+// 				"notification_id": notification.ID,
+// 			}).Info("Push notification sent successfully")
+// 			_ = repo.UpdateNotificationStatus(notification.ID, "success")
+// 		}
+// 	}
+// }
 
-func StartWhatsAppWorker(redisClient *redis.Client, db *mongo.Client) {
-	repo := repositories.NewNotificationRepository(db)
+// func StartWhatsAppWorker(redisClient *redis.Client, db *mongo.Client) {
+// 	repo := repositories.NewNotificationRepository(db)
 
-	for {
-		notification, err := queues.DequeueNotification("whatsapp")
-		if err != nil {
-			config.Logger.WithError(err).Error("Error dequeuing WhatsApp notification")
-			time.Sleep(1 * time.Second)
-			continue
-		}
+// 	for {
+// 		notification, err := queues.DequeueNotification("whatsapp")
+// 		if err != nil {
+// 			config.Logger.WithError(err).Error("Error dequeuing WhatsApp notification")
+// 			time.Sleep(1 * time.Second)
+// 			continue
+// 		}
 
-		if notification == nil {
-			time.Sleep(1 * time.Second)
-			continue
-		}
+// 		if notification == nil {
+// 			time.Sleep(1 * time.Second)
+// 			continue
+// 		}
 
-		config.Logger.WithFields(logrus.Fields{
-			"notification_id": notification.ID,
-			"provider":        notification.Provider,
-		}).Info("Processing WhatsApp notification")
+// 		config.Logger.WithFields(logrus.Fields{
+// 			"notification_id": notification.ID,
+// 			"provider":        notification.Provider,
+// 		}).Info("Processing WhatsApp notification")
 
-		err = services.SendWhatsApp(*notification)
-		if err != nil {
-			config.Logger.WithFields(logrus.Fields{
-				"notification_id": notification.ID,
-				"error":           err,
-			}).Error("Failed to send WhatsApp message")
-			_ = repo.UpdateNotificationStatus(notification.ID, "failed")
-		} else {
-			config.Logger.WithFields(logrus.Fields{
-				"notification_id": notification.ID,
-			}).Info("WhatsApp message sent successfully")
-			_ = repo.UpdateNotificationStatus(notification.ID, "success")
-		}
-	}
-}
+// 		err = services.SendWhatsApp(*notification)
+// 		if err != nil {
+// 			config.Logger.WithFields(logrus.Fields{
+// 				"notification_id": notification.ID,
+// 				"error":           err,
+// 			}).Error("Failed to send WhatsApp message")
+// 			_ = repo.UpdateNotificationStatus(notification.ID, "failed")
+// 		} else {
+// 			config.Logger.WithFields(logrus.Fields{
+// 				"notification_id": notification.ID,
+// 			}).Info("WhatsApp message sent successfully")
+// 			_ = repo.UpdateNotificationStatus(notification.ID, "success")
+// 		}
+// 	}
+// }
 
 // // Worker to process Redis and RabbitMQ queues
 // func StartWorker(redisClient *redis.Client, rabbitMQChannel *amqp.Channel, queueName string, notificationType string, useRabbitMQ bool) {
@@ -318,5 +308,79 @@ func StartWhatsAppWorker(redisClient *redis.Client, db *mongo.Client) {
 // 		}
 // 	default:
 // 		log.Printf("Unknown notification type: %s", notificationType)
+// 	}
+// }
+
+// emailProcessor := func(ctx context.Context, notification models.Notification) error {
+//     return services.SendEmail(ctx, notification)
+// }
+
+// smsProcessor := func(ctx context.Context, notification models.Notification) error {
+//     return services.SendSMS(ctx, notification)
+// }
+
+// type NotificationProcessor func(context.Context, models.Notification) error
+
+// type NotificationWorker struct {
+// 	redisClient *redis.Client
+// 	db          *mongo.Client
+// 	queueName   string
+// 	processor   NotificationProcessor
+// 	repo        *repositories.NotificationRepository
+// }
+
+// func NewNotificationWorker(redisClient *redis.Client, db *mongo.Client, queueName string, processor NotificationProcessor) *NotificationWorker {
+// 	return &NotificationWorker{
+// 		redisClient: redisClient,
+// 		db:          db,
+// 		queueName:   queueName,
+// 		processor:   processor,
+// 		repo:        repositories.NewNotificationRepository(db),
+// 	}
+// }
+
+// func (w *NotificationWorker) Start(ctx context.Context) {
+// 	for {
+// 		select {
+// 		case <-ctx.Done():
+// 			return
+// 		default:
+// 			w.processNotification(ctx)
+// 		}
+// 	}
+// }
+
+// func (w *NotificationWorker) processNotification(ctx context.Context) {
+// 	notification, err := queues.DequeueNotification(ctx, w.redisClient, w.queueName)
+// 	if err != nil {
+// 		if err != redis.Nil {
+// 			config.Logger.WithError(err).Errorf("Error dequeuing %s notification", w.queueName)
+// 		}
+// 		time.Sleep(1 * time.Second)
+// 		return
+// 	}
+
+// 	if notification == nil {
+// 		time.Sleep(1 * time.Second)
+// 		return
+// 	}
+
+// 	config.Logger.WithFields(logrus.Fields{
+// 		"notification_id": notification.ID,
+// 		"provider":        notification.Provider,
+// 	}).Infof("Processing %s notification", w.queueName)
+
+// 	err = w.processor(ctx, *notification)
+// 	if err != nil {
+// 		config.Logger.WithFields(logrus.Fields{
+// 			"notification_id": notification.ID,
+// 			"error":           err,
+// 		}).Errorf("Failed to process %s notification", w.queueName)
+// 		_ = w.repo.UpdateNotificationStatus(ctx, notification.ID, "failed")
+// 	} else {
+// 		config.Logger.WithFields(logrus.Fields{
+// 			"notification_id": notification.ID,
+// 		}).Infof("%s notification processed successfully", w.queueName)
+// 		_ = w.repo.UpdateNotificationStatus(ctx, notification.ID, "success")
 // 	}
 // }

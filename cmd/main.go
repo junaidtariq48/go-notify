@@ -22,6 +22,8 @@ func main() {
 	db := db.InitMongo()
 	redisClient := redis.InitRedis()
 
+	defer redisClient.Close()
+
 	// Initialize RabbitMQ connection
 	// rabbitMQConn := config.InitRabbitMQ()
 	// defer rabbitMQConn.Close()
@@ -34,7 +36,17 @@ func main() {
 
 	// Start workers for each notification type
 	go workers.StartNotificationWorker(redisClient, db)
+
 	go workers.StartEmailWorker(redisClient, db)
+
+	// emailProcessor := func(ctx context.Context, notification models.Notification) error {
+	// 	return services.SendEmail(ctx, notification)
+	// }
+
+	// smsProcessor := func(ctx context.Context, notification models.Notification) error {
+	// 	return services.SendSMS(ctx, notification)
+	// }
+
 	// go workers.StartSMSWorker(redisClient, db)
 	// go workers.StartPushWorker(redisClient, db)
 	// go workers.StartWhatsAppWorker(redisClient, db)

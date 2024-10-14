@@ -73,7 +73,7 @@ func CreateNotification(w http.ResponseWriter, r *http.Request, redisClient *red
 	// 	err = queues.EnqueueRabbitMQ(rabbitMQChannel, queueName, message)
 	// } else {
 	// Enqueue to Redis
-	err = queues.EnqueueNotification("notifications_queue", notification)
+	err = queues.EnqueueNotification(r.Context(), "notifications_queue", notification)
 	// }
 
 	if err != nil {

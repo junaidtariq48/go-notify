@@ -39,13 +39,14 @@ func main() {
 
 	go workers.StartEmailWorker(redisClient, db)
 
-	// emailProcessor := func(ctx context.Context, notification models.Notification) error {
-	// 	return services.SendEmail(ctx, notification)
-	// }
+	// 	ctx, cancel := context.WithCancel(context.Background())
+	// defer cancel()
 
-	// smsProcessor := func(ctx context.Context, notification models.Notification) error {
-	// 	return services.SendSMS(ctx, notification)
-	// }
+	// emailWorker := NewNotificationWorker(redisClient, mongoClient, "email_queue", emailProcessor)
+	// smsWorker := NewNotificationWorker(redisClient, mongoClient, "sms_queue", smsProcessor)
+
+	// go emailWorker.Start(ctx)
+	// go smsWorker.Start(ctx)
 
 	// go workers.StartSMSWorker(redisClient, db)
 	// go workers.StartPushWorker(redisClient, db)

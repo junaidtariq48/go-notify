@@ -12,6 +12,92 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// StartNotificationWorker processes email notifications from the Redis queue
+func StartNotificationWorker(redisClient *redis.Client, db *mongo.Client) {
+	repo := repositories.NewNotificationRepository(db)
+	for {
+		notification, err := queues.DequeueNotification("notifications_queue")
+		if err != nil {
+			config.Logger.WithError(err).Error("Error dequeuing notifications")
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		if notification == nil {
+			// Queue is empty, no need to process, just sleep and retry
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		// Set initial status and timestamps
+		notification.Status = "pending"
+		notification.CreatedAt = time.Now()
+		notification.UpdatedAt = time.Now()
+
+		// Save the notification to MongoDB
+		insertedID, err := repo.SaveNotification(notification)
+		if err != nil {
+			config.Logger.WithFields(logrus.Fields{
+				"type":         notification.Type,
+				"notification": notification,
+			}).Error("Error Processing notification")
+		}
+
+		notification.ID = insertedID.Hex()
+
+		config.Logger.WithFields(logrus.Fields{
+			"ID":       notification.ID,
+			"type":     notification.Type,
+			"provider": notification.Provider,
+		}).Info("Processing new notification")
+
+		var queueName string
+
+		switch notification.Type {
+		case "email":
+			queueName = "email"
+			// useRabbitMQ = false
+		case "sms":
+			queueName = "sms"
+			// useRabbitMQ = true // For example, SMS can use RabbitMQ
+		case "push":
+			queueName = "push"
+			// useRabbitMQ = false
+		case "whatsapp":
+			queueName = "whatsapp"
+			// useRabbitMQ = true
+		default:
+			config.Logger.WithError(err).Error("unsupported notificaiton type")
+		}
+
+		err = queues.EnqueueNotification(queueName, *notification)
+
+		if err != nil {
+			config.Logger.WithError(err).Error("Failed to enqueue notification")
+		}
+
+		config.Logger.WithFields(logrus.Fields{
+			"notification_id": notification.ID,
+			"queue_name":      queueName,
+		}).Info("Notification enqueued successfully")
+
+		// process the notification
+		// err = services.ProcessNotification(db, redisClient, *notification)
+		// if err != nil {
+		// 	config.Logger.WithFields(logrus.Fields{
+		// 		"notification_id": notification.ID,
+		// 		"error":           err,
+		// 	}).Error("Failed to process notification")
+		// 	// _ = repo.UpdateNotificationStatus(notification.ID, "failed")
+		// } else {
+		// 	config.Logger.WithFields(logrus.Fields{
+		// 		"notification_id": notification.ID,
+		// 	}).Info("Notification process successfully", notification.ID)
+		// 	// _ = repo.UpdateNotificationStatus(notification.ID, "success")
+		// }
+	}
+}
+
 // StartEmailWorker processes email notifications from the Redis queue
 func StartEmailWorker(redisClient *redis.Client, db *mongo.Client) {
 	repo := repositories.NewNotificationRepository(db)

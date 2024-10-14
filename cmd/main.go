@@ -33,6 +33,7 @@ func main() {
 	// defer rabbitMQChannel.Close()
 
 	// Start workers for each notification type
+	go workers.StartNotificationWorker(redisClient, db)
 	go workers.StartEmailWorker(redisClient, db)
 	// go workers.StartSMSWorker(redisClient, db)
 	// go workers.StartPushWorker(redisClient, db)

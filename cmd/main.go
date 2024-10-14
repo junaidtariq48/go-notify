@@ -1,22 +1,28 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"notify/config"
 	"notify/controllers"
+	"notify/pkg/db"
+	"notify/pkg/redis"
 	"notify/workers"
 )
 
 func main() {
-	// Initialize the logger
+	// Initialize the logger and config
 	config.InitLogger()
+
 	// Load config
-	cfg := config.LoadConfig()
+	config.InitializeConfig()
 
 	// Initialize MongoDB, Redis, etc.
-	db := config.InitMongo(cfg)
-	redisClient := config.InitRedis(cfg)
+	db := db.InitMongo()
+	redisClient := redis.InitRedis()
+
+	defer redisClient.Close()
 
 	// Initialize RabbitMQ connection
 	// rabbitMQConn := config.InitRabbitMQ()
@@ -29,7 +35,19 @@ func main() {
 	// defer rabbitMQChannel.Close()
 
 	// Start workers for each notification type
+	go workers.StartNotificationWorker(redisClient, db)
+
 	go workers.StartEmailWorker(redisClient, db)
+
+	// 	ctx, cancel := context.WithCancel(context.Background())
+	// defer cancel()
+
+	// emailWorker := NewNotificationWorker(redisClient, mongoClient, "email_queue", emailProcessor)
+	// smsWorker := NewNotificationWorker(redisClient, mongoClient, "sms_queue", smsProcessor)
+
+	// go emailWorker.Start(ctx)
+	// go smsWorker.Start(ctx)
+
 	// go workers.StartSMSWorker(redisClient, db)
 	// go workers.StartPushWorker(redisClient, db)
 	// go workers.StartWhatsAppWorker(redisClient, db)
@@ -67,5 +85,12 @@ func main() {
 	// router := controllers.InitRouter()
 	// Initialize the router
 	router := controllers.InitRouter(redisClient, db)
-	log.Fatal(http.ListenAndServe(cfg.ServerPort, router))
+
+	err := http.ListenAndServe(config.AppConfig.ServerPort, router)
+	fmt.Println(err)
+	if err != nil {
+		log.Fatalf("Failed to start the server: %v", err)
+	}
+
+	log.Printf("Server started on: %v", config.AppConfig.ServerPort)
 }

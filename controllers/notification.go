@@ -6,8 +6,6 @@ import (
 	"notify/config"
 	"notify/models"
 	"notify/queues"
-	"notify/repositories"
-	"time"
 
 	"github.com/go-redis/redis/v8"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -28,46 +26,46 @@ func CreateNotification(w http.ResponseWriter, r *http.Request, redisClient *red
 		return
 	}
 
-	// Set initial status and timestamps
-	notification.Status = "pending"
-	notification.CreatedAt = time.Now()
-	notification.UpdatedAt = time.Now()
+	// // Set initial status and timestamps
+	// notification.Status = "pending"
+	// notification.CreatedAt = time.Now()
+	// notification.UpdatedAt = time.Now()
 
 	// Initialize the MongoDB repository
-	repo := repositories.NewNotificationRepository(db)
+	// repo := repositories.NewNotificationRepository(db)
 
-	// Save the notification to MongoDB
-	insertedID, err := repo.SaveNotification(&notification)
-	if err != nil {
-		config.Logger.WithError(err).Error("Failed to save notification to MongoDB")
-		http.Error(w, "Failed to save notification", http.StatusInternalServerError)
-		return
-	}
+	// // Save the notification to MongoDB
+	// insertedID, err := repo.SaveNotification(&notification)
+	// if err != nil {
+	// 	config.Logger.WithError(err).Error("Failed to save notification to MongoDB")
+	// 	http.Error(w, "Failed to save notification", http.StatusInternalServerError)
+	// 	return
+	// }
 
-	notification.ID = insertedID.Hex()
-	config.Logger.WithField("notification_id", insertedID).Info("Notification saved to MongoDB")
+	// notification.ID = insertedID.Hex()
+	// config.Logger.WithField("notification_id", insertedID).Info("Notification saved to MongoDB")
 
 	// Choose between Redis or RabbitMQ based on notification type (for example)
-	var queueName string
-	// var useRabbitMQ bool
+	// var queueName string
+	// // var useRabbitMQ bool
 
-	switch notification.Type {
-	case "email":
-		queueName = "email"
-		// useRabbitMQ = false
-	case "sms":
-		queueName = "sms"
-		// useRabbitMQ = true // For example, SMS can use RabbitMQ
-	case "push":
-		queueName = "push"
-		// useRabbitMQ = false
-	case "whatsapp":
-		queueName = "whatsapp"
-		// useRabbitMQ = true
-	default:
-		http.Error(w, "Invalid notification type", http.StatusBadRequest)
-		return
-	}
+	// switch notification.Type {
+	// case "email":
+	// 	queueName = "email"
+	// 	// useRabbitMQ = false
+	// case "sms":
+	// 	queueName = "sms"
+	// 	// useRabbitMQ = true // For example, SMS can use RabbitMQ
+	// case "push":
+	// 	queueName = "push"
+	// 	// useRabbitMQ = false
+	// case "whatsapp":
+	// 	queueName = "whatsapp"
+	// 	// useRabbitMQ = true
+	// default:
+	// 	http.Error(w, "Invalid notification type", http.StatusBadRequest)
+	// 	return
+	// }
 
 	// if useRabbitMQ {
 	// 	// Enqueue to RabbitMQ
@@ -75,7 +73,7 @@ func CreateNotification(w http.ResponseWriter, r *http.Request, redisClient *red
 	// 	err = queues.EnqueueRabbitMQ(rabbitMQChannel, queueName, message)
 	// } else {
 	// Enqueue to Redis
-	err = queues.EnqueueNotification(queueName, notification)
+	err = queues.EnqueueNotification(r.Context(), "notifications_queue", notification)
 	// }
 
 	if err != nil {
@@ -84,13 +82,13 @@ func CreateNotification(w http.ResponseWriter, r *http.Request, redisClient *red
 		return
 	}
 
-	config.Logger.WithField("notification_id", insertedID).Info("Notification enqueued successfully")
+	config.Logger.WithField("notification_id", notification.Type).Info("Notification enqueued successfully")
 
 	// Return a success response
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"status":          "success",
-		"notification_id": insertedID,
+		"status": "success",
+		// "notification_id": insertedID,
 	})
 }
 

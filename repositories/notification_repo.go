@@ -23,10 +23,11 @@ func NewNotificationRepository(db *mongo.Client) *NotificationRepository {
 }
 
 // SaveNotification saves a new notification in the MongoDB
-func (r *NotificationRepository) SaveNotification(notification *models.Notification) (primitive.ObjectID, error) {
+func (r *NotificationRepository) SaveNotification(ctx context.Context, notification *models.Notification) (primitive.ObjectID, error) {
 	notification.CreatedAt = time.Now()
 	notification.UpdatedAt = time.Now()
-	result, err := r.Collection.InsertOne(context.TODO(), notification)
+
+	result, err := r.Collection.InsertOne(ctx, notification)
 	if err != nil {
 		log.Printf("Error inserting notification into MongoDB: %v", err)
 		return primitive.NilObjectID, err
@@ -36,7 +37,7 @@ func (r *NotificationRepository) SaveNotification(notification *models.Notificat
 }
 
 // UpdateNotificationStatus updates the status of a notification
-func (r *NotificationRepository) UpdateNotificationStatus(id string, status string) error {
+func (r *NotificationRepository) UpdateNotificationStatus(ctx context.Context, id string, status string) error {
 	// // idString := "ObjectID(\"670903ec6d2a96f739a4e9e6\")"
 	// idString := strings.Trim(strings.TrimPrefix(id, "ObjectID("), "\")")
 
@@ -59,7 +60,7 @@ func (r *NotificationRepository) UpdateNotificationStatus(id string, status stri
 		},
 	}
 	fmt.Println(filter)
-	_, err := r.Collection.UpdateOne(context.TODO(), filter, update)
+	_, err := r.Collection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		log.Println("Failed to update notification status:", err)
 	}

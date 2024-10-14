@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"notify/config"
@@ -15,7 +16,7 @@ type EmailProvider interface {
 }
 
 // SendEmail processes the email notification
-func SendEmail(notification models.Notification) error {
+func SendEmail(ctx context.Context, notification models.Notification) error {
 	config.Logger.WithFields(logrus.Fields{
 		"notification_id": notification.ID,
 		"provider":        notification.Provider,

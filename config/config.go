@@ -9,18 +9,19 @@ import (
 )
 
 type Config struct {
-	Environment   string `mapstructure:"ENVIRONMENT"`
-	Host          string `mapstructure:"HOST"`
-	AppVersion    string `mapstructure:"APP_VERSION"`
-	QueueSystem   string `mapstructure:"QUEUE_SYSTEM"`
-	MongoURI      string `mapstructure:"MONGO_URI"`
-	MongoDB       string `mapstructure:"MONGO_DB"`
-	MongoUser     string `mapstructure:"MONGO_USER"`
-	MongoPassword string `mapstructure:"MONGO_PASSWORD"`
-	RedisHost     string `mapstructure:"REDIS_HOST"`
-	RedisPort     string `mapstructure:"REDIS_PORT"`
-	RedisPass     string `mapstructure:"REDIS_PASSWORD"`
-	ServerPort    string `mapstructure:"APP_PORT"`
+	Environment     string `mapstructure:"ENVIRONMENT"`
+	Host            string `mapstructure:"HOST"`
+	AppVersion      string `mapstructure:"APP_VERSION"`
+	QueueSystem     string `mapstructure:"QUEUE_SYSTEM"`
+	MongoURI        string `mapstructure:"MONGO_URI"`
+	MongoDB         string `mapstructure:"MONGO_DB"`
+	MongoAuthSource string `mapstructure:"MONGO_AUTH_SOURCE"`
+	MongoUser       string `mapstructure:"MONGO_USER"`
+	MongoPassword   string `mapstructure:"MONGO_PASSWORD"`
+	RedisHost       string `mapstructure:"REDIS_HOST"`
+	RedisPort       string `mapstructure:"REDIS_PORT"`
+	RedisPass       string `mapstructure:"REDIS_PASSWORD"`
+	ServerPort      string `mapstructure:"APP_PORT"`
 }
 
 var AppConfig Config

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,7 +9,11 @@ import (
 	"notify/controllers"
 	"notify/pkg/db"
 	"notify/pkg/redis"
+	"notify/processors"
 	"notify/workers"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -20,6 +25,8 @@ func main() {
 
 	// Initialize MongoDB, Redis, etc.
 	db := db.InitMongo()
+	defer db.Disconnect(context.Background())
+
 	redisClient := redis.InitRedis()
 
 	defer redisClient.Close()
@@ -35,9 +42,9 @@ func main() {
 	// defer rabbitMQChannel.Close()
 
 	// Start workers for each notification type
-	go workers.StartNotificationWorker(redisClient, db)
+	// go workers.StartNotificationWorker(redisClient, db)
 
-	go workers.StartEmailWorker(redisClient, db)
+	// go workers.StartEmailWorker(redisClient, db)
 
 	// 	ctx, cancel := context.WithCancel(context.Background())
 	// defer cancel()
@@ -81,6 +88,23 @@ func main() {
 	// 	log.Fatalf("Failed to enqueue notification: %v", err)
 	// }
 
+	// Create context for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Create main notification processor
+	mainProcessor := workers.NewMainNotificationWorker(redisClient, db, config.Logger)
+
+	// Create workers
+	// emailWorker := workers.NewNotificationWorker(redisClient, db, "email_queue", processors.EmailProcessor)
+	emailWorker := workers.NewNotificationWorker(redisClient, db, workers.EmailQueue, processors.EmailProcessor)
+	// smsWorker := workers.NewNotificationWorker(redisClient, db, "sms_queue", processors.SMSProcessor)
+
+	// Start workers
+	go mainProcessor.Start(ctx)
+	go emailWorker.Start(ctx)
+	// go smsWorker.Start(ctx)
+
 	// Initialize HTTP server
 	// router := controllers.InitRouter()
 	// Initialize the router
@@ -93,4 +117,12 @@ func main() {
 	}
 
 	log.Printf("Server started on: %v", config.AppConfig.ServerPort)
+
+	// Wait for shutdown signal
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
+	<-shutdown
+
+	config.Logger.Info("Shutting down gracefully...")
+	cancel() // This will stop all processors and workers
 }

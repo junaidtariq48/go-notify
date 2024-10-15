@@ -14,7 +14,7 @@ func InitMongo() *mongo.Client {
 	// mongoURI := os.Getenv("MONGO_URI")
 
 	clientOptions := options.Client().ApplyURI(config.AppConfig.MongoURI).SetAuth(options.Credential{
-		AuthSource: config.AppConfig.MongoDB,
+		AuthSource: config.AppConfig.MongoAuthSource,
 		Username:   config.AppConfig.MongoUser,
 		Password:   config.AppConfig.MongoPassword,
 	})

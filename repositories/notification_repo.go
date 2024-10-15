@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"notify/config"
 	"notify/models"
 	"time"
 
@@ -12,13 +13,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+const COLLECTION_NAME = "notifications"
+
 type NotificationRepository struct {
 	Collection *mongo.Collection
 }
 
 // NewNotificationRepository creates a new instance of NotificationRepository
 func NewNotificationRepository(db *mongo.Client) *NotificationRepository {
-	collection := db.Database("notifications_db").Collection("notifications")
+	collection := db.Database(config.AppConfig.MongoDB).Collection(COLLECTION_NAME)
 	return &NotificationRepository{Collection: collection}
 }
 

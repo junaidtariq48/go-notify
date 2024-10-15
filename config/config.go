@@ -49,12 +49,11 @@ func InitializeConfig() {
 		panic(fmt.Errorf("fatal error when unmarshaling config: %s", err))
 	}
 
-	// Override config with environment variables
 	t := reflect.TypeOf(AppConfig)
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		envKey := field.Tag.Get("mapstructure")
-		if envKey != "" && envKey != "PORT" { // Skip PORT as we've already handled it
+		if envKey != "" && envKey != "PORT" {
 			envVal := viper.GetString(envKey)
 			if envVal != "" {
 				viper.Set(envKey, envVal)
@@ -62,7 +61,6 @@ func InitializeConfig() {
 		}
 	}
 
-	// Re-unmarshal to ensure all values are updated
 	err = viper.Unmarshal(&AppConfig)
 	if err != nil {
 		panic(fmt.Errorf("fatal error when re-unmarshaling config: %s", err))
@@ -70,35 +68,3 @@ func InitializeConfig() {
 
 	log.Printf("Configuration loaded. Environment: %s, Host: %s, Port: %d", AppConfig.Environment, AppConfig.Host, AppConfig.ServerPort)
 }
-
-// // InitRedis initializes a Redis client
-// func InitRedis(cfg Config) *redis.Client {
-// 	redisAddr := cfg.RedisAddr
-// 	redisPassword := cfg.RedisPass
-// 	rdb := redis.NewClient(&redis.Options{
-// 		Addr:     redisAddr,
-// 		Password: redisPassword, // No password set
-// 		DB:       0,             // Use default DB
-// 	})
-
-// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-// 	defer cancel()
-
-// 	if err := rdb.Ping(ctx).Err(); err != nil {
-// 		log.Fatalf("Failed to connect to Redis: %v", err)
-// 	}
-
-// 	log.Println("Connected to Redis!")
-// 	return rdb
-// }
-
-// func InitRabbitMQ() *amqp.Connection {
-// 	rabbitmqURI := os.Getenv("RABBITMQ_URI")
-// 	conn, err := amqp.Dial(rabbitmqURI)
-// 	if err != nil {
-// 		log.Fatalf("Failed to connect to RabbitMQ: %s", err)
-// 	}
-
-// 	log.Println("Connected to RabbitMQ")
-// 	return conn
-// }

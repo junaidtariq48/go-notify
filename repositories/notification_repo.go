@@ -41,14 +41,6 @@ func (r *NotificationRepository) SaveNotification(ctx context.Context, notificat
 
 // UpdateNotificationStatus updates the status of a notification
 func (r *NotificationRepository) UpdateNotificationStatus(ctx context.Context, id string, status string) error {
-	// // idString := "ObjectID(\"670903ec6d2a96f739a4e9e6\")"
-	// idString := strings.Trim(strings.TrimPrefix(id, "ObjectID("), "\")")
-
-	// // Convert string ID to ObjectID
-	// // id, err := primitive.ObjectIDFromHex(idString)
-	// // if err != nil {
-	// // 	log.Fatal(err)
-	// // }
 
 	objectID, errr := primitive.ObjectIDFromHex(id)
 	if errr != nil {

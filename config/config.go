@@ -9,18 +9,20 @@ import (
 )
 
 type Config struct {
-	Environment   string `mapstructure:"ENVIRONMENT"`
-	Host          string `mapstructure:"HOST"`
-	AppVersion    string `mapstructure:"APP_VERSION"`
-	QueueSystem   string `mapstructure:"QUEUE_SYSTEM"`
-	MongoURI      string `mapstructure:"MONGO_URI"`
-	MongoDB       string `mapstructure:"MONGO_DB"`
-	MongoUser     string `mapstructure:"MONGO_USER"`
-	MongoPassword string `mapstructure:"MONGO_PASSWORD"`
-	RedisHost     string `mapstructure:"REDIS_HOST"`
-	RedisPort     string `mapstructure:"REDIS_PORT"`
-	RedisPass     string `mapstructure:"REDIS_PASSWORD"`
-	ServerPort    string `mapstructure:"APP_PORT"`
+	Environment     string `mapstructure:"ENVIRONMENT"`
+	Host            string `mapstructure:"HOST"`
+	AppVersion      string `mapstructure:"APP_VERSION"`
+	QueueSystem     string `mapstructure:"QUEUE_SYSTEM"`
+	MongoURI        string `mapstructure:"MONGO_URI"`
+	MongoDB         string `mapstructure:"MONGO_DB"`
+	MongoAuthSource string `mapstructure:"MONGO_AUTH_SOURCE"`
+	MongoUser       string `mapstructure:"MONGO_USER"`
+	MongoPassword   string `mapstructure:"MONGO_PASSWORD"`
+	RedisHost       string `mapstructure:"REDIS_HOST"`
+	RedisPort       string `mapstructure:"REDIS_PORT"`
+	RedisPass       string `mapstructure:"REDIS_PASSWORD"`
+	ServerPort      string `mapstructure:"APP_PORT"`
+	FromEmail       string `mapstructure:"FROM_EMAIL"`
 }
 
 var AppConfig Config
@@ -42,18 +44,18 @@ func InitializeConfig() {
 	viper.SetDefault("HOST", "0.0.0.0")
 	viper.SetDefault("ENVIRONMENT", "dev")
 	viper.SetDefault("APP_VERSION", "0.0.1")
+	viper.SetDefault("FROM_EMAIL", "no-reply@aqaryint.com")
 
 	err = viper.Unmarshal(&AppConfig)
 	if err != nil {
 		panic(fmt.Errorf("fatal error when unmarshaling config: %s", err))
 	}
 
-	// Override config with environment variables
 	t := reflect.TypeOf(AppConfig)
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		envKey := field.Tag.Get("mapstructure")
-		if envKey != "" && envKey != "PORT" { // Skip PORT as we've already handled it
+		if envKey != "" && envKey != "PORT" {
 			envVal := viper.GetString(envKey)
 			if envVal != "" {
 				viper.Set(envKey, envVal)
@@ -61,7 +63,6 @@ func InitializeConfig() {
 		}
 	}
 
-	// Re-unmarshal to ensure all values are updated
 	err = viper.Unmarshal(&AppConfig)
 	if err != nil {
 		panic(fmt.Errorf("fatal error when re-unmarshaling config: %s", err))
@@ -69,35 +70,3 @@ func InitializeConfig() {
 
 	log.Printf("Configuration loaded. Environment: %s, Host: %s, Port: %d", AppConfig.Environment, AppConfig.Host, AppConfig.ServerPort)
 }
-
-// // InitRedis initializes a Redis client
-// func InitRedis(cfg Config) *redis.Client {
-// 	redisAddr := cfg.RedisAddr
-// 	redisPassword := cfg.RedisPass
-// 	rdb := redis.NewClient(&redis.Options{
-// 		Addr:     redisAddr,
-// 		Password: redisPassword, // No password set
-// 		DB:       0,             // Use default DB
-// 	})
-
-// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-// 	defer cancel()
-
-// 	if err := rdb.Ping(ctx).Err(); err != nil {
-// 		log.Fatalf("Failed to connect to Redis: %v", err)
-// 	}
-
-// 	log.Println("Connected to Redis!")
-// 	return rdb
-// }
-
-// func InitRabbitMQ() *amqp.Connection {
-// 	rabbitmqURI := os.Getenv("RABBITMQ_URI")
-// 	conn, err := amqp.Dial(rabbitmqURI)
-// 	if err != nil {
-// 		log.Fatalf("Failed to connect to RabbitMQ: %s", err)
-// 	}
-
-// 	log.Println("Connected to RabbitMQ")
-// 	return conn
-// }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"notify/config"
 	"notify/models"
 	"time"
 
@@ -12,13 +13,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+const COLLECTION_NAME = "notifications"
+
 type NotificationRepository struct {
 	Collection *mongo.Collection
 }
 
 // NewNotificationRepository creates a new instance of NotificationRepository
 func NewNotificationRepository(db *mongo.Client) *NotificationRepository {
-	collection := db.Database("notifications_db").Collection("notifications")
+	collection := db.Database(config.AppConfig.MongoDB).Collection(COLLECTION_NAME)
 	return &NotificationRepository{Collection: collection}
 }
 
@@ -38,14 +41,6 @@ func (r *NotificationRepository) SaveNotification(ctx context.Context, notificat
 
 // UpdateNotificationStatus updates the status of a notification
 func (r *NotificationRepository) UpdateNotificationStatus(ctx context.Context, id string, status string) error {
-	// // idString := "ObjectID(\"670903ec6d2a96f739a4e9e6\")"
-	// idString := strings.Trim(strings.TrimPrefix(id, "ObjectID("), "\")")
-
-	// // Convert string ID to ObjectID
-	// // id, err := primitive.ObjectIDFromHex(idString)
-	// // if err != nil {
-	// // 	log.Fatal(err)
-	// // }
 
 	objectID, errr := primitive.ObjectIDFromHex(id)
 	if errr != nil {

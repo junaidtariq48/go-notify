@@ -12,7 +12,7 @@ import (
 )
 
 type EmailProvider interface {
-	Send(notification models.Notification) error
+	Send(ctx context.Context, notification models.Notification) error
 }
 
 // SendEmail processes the email notification
@@ -36,5 +36,5 @@ func SendEmail(ctx context.Context, notification models.Notification) error {
 		return fmt.Errorf("unsupported email provider: %s", notification.Provider)
 	}
 
-	return provider.Send(notification)
+	return provider.Send(ctx, notification)
 }

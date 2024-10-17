@@ -22,6 +22,7 @@ type Config struct {
 	RedisPort       string `mapstructure:"REDIS_PORT"`
 	RedisPass       string `mapstructure:"REDIS_PASSWORD"`
 	ServerPort      string `mapstructure:"APP_PORT"`
+	SendGridApiKey  string `mapstructure:"SENDGRID_API_KEY"`
 	FromEmail       string `mapstructure:"FROM_EMAIL"`
 }
 
@@ -44,7 +45,7 @@ func InitializeConfig() {
 	viper.SetDefault("HOST", "0.0.0.0")
 	viper.SetDefault("ENVIRONMENT", "dev")
 	viper.SetDefault("APP_VERSION", "0.0.1")
-	viper.SetDefault("FROM_EMAIL", "no-reply@aqaryint.com")
+	viper.SetDefault("FROM_EMAIL", "noreply@aqaryint.com")
 
 	err = viper.Unmarshal(&AppConfig)
 	if err != nil {

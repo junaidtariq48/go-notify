@@ -4,11 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"notify/config"
 	"notify/models"
+	"notify/repositories"
 	"notify/services"
+
+	"github.com/sirupsen/logrus"
 )
 
-func EmailProcessor(ctx context.Context, notification models.Notification) error {
+func EmailProcessor(ctx context.Context, repo repositories.Repositories, notification models.Notification) error {
 
 	var payload map[string]interface{}
 	err := json.Unmarshal([]byte(notification.Payload), &payload)
@@ -31,35 +35,28 @@ func EmailProcessor(ctx context.Context, notification models.Notification) error
 		}
 	}
 
-	// Ensure dynamic_data is a map of string key-value pairs
-	// var data map[string]interface{}
-	// errr := json.Unmarshal([]byte(payload["data"]), &data)
-	// if errr != nil {
-	// 	return errr
-	// }
+	var emailModel models.Email
 
-	// var repo repositories.Repositories
+	emailModel.To = payload["to"].(string)
+	emailModel.From = config.AppConfig.FromEmail
+	emailModel.Body = dynamicData
+	emailModel.NotificaitonID = notification.ID
+	emailModel.Status = "pending"
 
-	// var emailModel *models.Email
-
-	// emailModel.To = payload["to"].(string)
-	// emailModel.From = config.AppConfig.FromEmail
-	// emailModel.Body = dynamicData
-	// emailModel.NotificaitonID = notification.ID
-	// emailModel.Status = "pending"
-
-	fmt.Println("::EMALLLLL::", payload["to"].(string))
 	// Save the notification to MongoDB
-	// insertedID, err := repo.EmailRepo.SaveEmail(ctx, emailModel)
-	// if err != nil {
+	insertedID, err := repo.EmailRepo.SaveEmail(ctx, &emailModel)
 
-	// 	config.Logger.WithFields(logrus.Fields{
-	// 		"type":         notification.Type,
-	// 		"notification": notification,
-	// 	}).Error("Error Processing notification")
-	// }
+	if err != nil {
 
+		config.Logger.WithFields(logrus.Fields{
+			"type":         notification.Type,
+			"notification": notification,
+		}).Error("Error Processing notification")
+	}
+
+	fmt.Println("::EMAIL::", insertedID)
 	return services.SendEmail(ctx, notification)
+
 }
 
 // SMSProcessor handles processing of SMS notifications

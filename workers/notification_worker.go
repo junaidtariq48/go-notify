@@ -13,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type NotificationProcessor func(context.Context, models.Notification) error
+type NotificationProcessor func(context.Context, repositories.Repositories, models.Notification) error
 
 type NotificationWorker struct {
 	redisClient *redis.Client
@@ -66,7 +66,7 @@ func (w *NotificationWorker) processNotification(ctx context.Context) {
 		"provider":        notification.Provider,
 	}).Infof("Processing %s notification", w.queueName)
 
-	err = w.processor(ctx, *notification)
+	err = w.processor(ctx, *w.repo, *notification)
 	if err != nil {
 		config.Logger.WithFields(logrus.Fields{
 			"notification_id": notification.ID,

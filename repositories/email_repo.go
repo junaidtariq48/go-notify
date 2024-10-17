@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"notify/config"
+	constants "notify/contants"
 	"notify/models"
 	"time"
 
@@ -18,7 +20,7 @@ type EmailRepository struct {
 
 // NewNotificationRepository creates a new instance of NotificationRepository
 func NewEmailRepository(db *mongo.Client) *EmailRepository {
-	collection := db.Database("notifications_db").Collection("notifications")
+	collection := db.Database(config.AppConfig.MongoDB).Collection(constants.EMAIL_COLLECTION)
 	return &EmailRepository{Collection: collection}
 }
 
@@ -26,6 +28,8 @@ func NewEmailRepository(db *mongo.Client) *EmailRepository {
 func (r *EmailRepository) SaveEmail(ctx context.Context, email *models.Email) (primitive.ObjectID, error) {
 	email.CreatedAt = time.Now()
 	email.UpdatedAt = time.Now()
+
+	fmt.Println("::EMALLLLL-INSIDE::", email)
 	result, err := r.Collection.InsertOne(context.TODO(), email)
 	if err != nil {
 		log.Printf("Error inserting email into MongoDB: %v", err)

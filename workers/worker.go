@@ -3,7 +3,6 @@ package workers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -88,8 +87,6 @@ func (p *MainNotificationWorker) processMainQueue(ctx context.Context) {
 	}
 
 	notification.ID = insertedID.Hex()
-
-	fmt.Println("::ZAP::", notification)
 
 	p.distributeNotification(ctx, &notification)
 }

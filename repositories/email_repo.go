@@ -29,7 +29,6 @@ func (r *EmailRepository) SaveEmail(ctx context.Context, email *models.Email) (p
 	email.CreatedAt = time.Now()
 	email.UpdatedAt = time.Now()
 
-	fmt.Println("::EMALLLLL-INSIDE::", email)
 	result, err := r.Collection.InsertOne(context.TODO(), email)
 	if err != nil {
 		log.Printf("Error inserting email into MongoDB: %v", err)

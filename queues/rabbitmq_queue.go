@@ -1,12 +1,15 @@
 package queues
 
 import (
+	"encoding/json"
 	"log"
+	"notify/models"
 
 	"github.com/streadway/amqp"
 )
 
-func EnqueueRabbitMQ(ch *amqp.Channel, queueName string, message []byte) error {
+func EnqueueRabbitMQ(ch *amqp.Channel, queueName string, notification models.Notification) error {
+	message, _ := json.Marshal(notification)
 	// Declare a queue
 	_, err := ch.QueueDeclare(
 		queueName, // name

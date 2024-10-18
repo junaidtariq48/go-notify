@@ -26,7 +26,7 @@ func CreateNotification(w http.ResponseWriter, r *http.Request, redisClient *red
 		return
 	}
 
-	err = queues.EnqueueNotification(r.Context(), "notifications_queue", notification)
+	err = queues.EnqueueNotification(r.Context(), redisClient, "notifications_queue", notification)
 
 	if err != nil {
 		config.Logger.WithError(err).Error("Failed to enqueue notification")

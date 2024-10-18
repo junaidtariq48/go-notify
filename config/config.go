@@ -18,6 +18,7 @@ type Config struct {
 	MongoAuthSource string `mapstructure:"MONGO_AUTH_SOURCE"`
 	MongoUser       string `mapstructure:"MONGO_USER"`
 	MongoPassword   string `mapstructure:"MONGO_PASSWORD"`
+	RabbitMQUrl     string `mapstructure:"RABBITMQ_URL"`
 	RedisHost       string `mapstructure:"REDIS_HOST"`
 	RedisPort       string `mapstructure:"REDIS_PORT"`
 	RedisPass       string `mapstructure:"REDIS_PASSWORD"`

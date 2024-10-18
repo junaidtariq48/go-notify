@@ -2,7 +2,6 @@ package workers
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -11,11 +10,12 @@ import (
 
 	"notify/config"
 	"notify/models"
+	"notify/queues"
 	"notify/repositories"
 )
 
 const (
-	MainNotificationQueue = "queue:notifications_queue"
+	MainNotificationQueue = "notifications_queue"
 	EmailQueue            = "email_queue"
 	SMSQueue              = "sms_queue"
 )
@@ -52,25 +52,26 @@ func (p *MainNotificationWorker) Start(ctx context.Context) {
 
 func (p *MainNotificationWorker) processMainQueue(ctx context.Context) {
 
-	result, err := p.redisClient.BLPop(ctx, 0, MainNotificationQueue).Result()
-	if err != nil {
-		if err != redis.Nil {
-			p.logger.WithError(err).Error("Error dequeuing from main notification queue")
-		}
-		return
-	}
+	notification, err := queues.DequeueNotification(ctx, p.redisClient, MainNotificationQueue)
+	// result, err := p.redisClient.BLPop(ctx, 0, MainNotificationQueue).Result()
+	// if err != nil {
+	// 	if err != redis.Nil {
+	// 		p.logger.WithError(err).Error("Error dequeuing from main notification queue")
+	// 	}
+	// 	return
+	// }
 
-	if len(result) != 2 {
-		p.logger.Error("Unexpected result format from Redis")
-		return
-	}
+	// if len(result) != 2 {
+	// 	p.logger.Error("Unexpected result format from Redis")
+	// 	return
+	// }
 
-	var notification models.Notification
-	err = json.Unmarshal([]byte(result[1]), &notification)
-	if err != nil {
-		p.logger.WithError(err).Error("Error unmarshaling notification")
-		return
-	}
+	// var notification models.Notification
+	// err = json.Unmarshal([]byte(result[1]), &notification)
+	// if err != nil {
+	// 	p.logger.WithError(err).Error("Error unmarshaling notification")
+	// 	return
+	// }
 
 	// Set initial status and timestamps
 	notification.Status = "pending"
@@ -78,7 +79,7 @@ func (p *MainNotificationWorker) processMainQueue(ctx context.Context) {
 	notification.UpdatedAt = time.Now()
 
 	// Save the notification to MongoDB
-	insertedID, err := p.repo.NotificationRepo.SaveNotification(ctx, &notification)
+	insertedID, err := p.repo.NotificationRepo.SaveNotification(ctx, notification)
 	if err != nil {
 		config.Logger.WithFields(logrus.Fields{
 			"type":         notification.Type,
@@ -88,7 +89,7 @@ func (p *MainNotificationWorker) processMainQueue(ctx context.Context) {
 
 	notification.ID = insertedID.Hex()
 
-	p.distributeNotification(ctx, &notification)
+	p.distributeNotification(ctx, notification)
 }
 
 func (p *MainNotificationWorker) distributeNotification(ctx context.Context, notification *models.Notification) {
@@ -103,13 +104,14 @@ func (p *MainNotificationWorker) distributeNotification(ctx context.Context, not
 		return
 	}
 
-	notificationJSON, err := json.Marshal(notification)
-	if err != nil {
-		p.logger.WithError(err).Error("Error marshaling notification for distribution")
-		return
-	}
+	// notificationJSON, err := json.Marshal(notification)
+	// if err != nil {
+	// 	p.logger.WithError(err).Error("Error marshaling notification for distribution")
+	// 	return
+	// }
 
-	err = p.redisClient.RPush(ctx, targetQueue, notificationJSON).Err()
+	err := queues.EnqueueNotification(ctx, p.redisClient, targetQueue, *notification)
+	// err = p.redisClient.RPush(ctx, targetQueue, notificationJSON).Err()
 	if err != nil {
 		p.logger.WithError(err).WithField("queue", targetQueue).Error("Error pushing to specific queue")
 		return

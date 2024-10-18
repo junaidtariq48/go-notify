@@ -23,7 +23,7 @@ func (s *SendGridProvider) Send(ctx context.Context, notification models.Notific
 
 	log.Printf("SendGrid: Sending email to %s with subject %s", payload["to"], payload["subject"])
 
-	SendEmail()
+	// SendEmail()
 	// Simulate sending email via SendGrid
 	// Normally here you'd call SendGrid's API to send the email
 	return nil

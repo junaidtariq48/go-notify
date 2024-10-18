@@ -52,7 +52,7 @@ func (r *EmailRepository) UpdateEmailStatus(id string, status string) error {
 			"updated_at": time.Now(),
 		},
 	}
-	fmt.Println(filter)
+
 	_, err := r.Collection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		log.Println("Failed to update email status:", err)

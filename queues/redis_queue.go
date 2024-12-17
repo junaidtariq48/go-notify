@@ -6,7 +6,7 @@ import (
 	constants "notify/contants"
 	"notify/models"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 func EnqueueNotification(ctx context.Context, redisClient *redis.Client, notificationType string, notification models.Notification) error {

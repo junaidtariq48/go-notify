@@ -14,6 +14,6 @@ func InitRabbitMQ() *amqp.Connection {
 		log.Fatalf("Failed to connect to RabbitMQ: %s", err)
 	}
 
-	log.Println("Connected to RabbitMQ")
+	log.Println("Rabbit is running.......")
 	return conn
 }

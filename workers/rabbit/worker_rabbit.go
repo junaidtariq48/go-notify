@@ -1,10 +1,9 @@
-package workers
+package workersRabbit
 
 import (
 	"context"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -12,6 +11,8 @@ import (
 	"notify/models"
 	"notify/queues"
 	"notify/repositories"
+
+	"github.com/streadway/amqp"
 )
 
 const (
@@ -21,23 +22,23 @@ const (
 )
 
 type MainNotificationWorker struct {
-	redisClient *redis.Client
-	logger      *logrus.Logger
-	db          *mongo.Client
-	repo        *repositories.Repositories
+	channel *amqp.Channel
+	logger  *logrus.Logger
+	db      *mongo.Client
+	repo    *repositories.Repositories
 }
 
-func NewMainNotificationWorker(redisClient *redis.Client, db *mongo.Client, logger *logrus.Logger) *MainNotificationWorker {
+func NewMainNotificationWorker(channel *amqp.Channel, db *mongo.Client, logger *logrus.Logger) *MainNotificationWorker {
 	return &MainNotificationWorker{
-		redisClient: redisClient,
-		logger:      logger,
-		db:          db,
-		repo:        repositories.NewRepositories(db),
+		channel: channel,
+		logger:  logger,
+		db:      db,
+		repo:    repositories.NewRepositories(db),
 	}
 }
 
 func (p *MainNotificationWorker) Start(ctx context.Context) {
-	p.logger.Info("Starting main notification Worker")
+	p.logger.Info("Starting main notification Worker listening to rabbit....")
 
 	for {
 		select {
@@ -52,26 +53,16 @@ func (p *MainNotificationWorker) Start(ctx context.Context) {
 
 func (p *MainNotificationWorker) processMainQueue(ctx context.Context) {
 
-	notification, err := queues.DequeueNotification(ctx, p.redisClient, MainNotificationQueue)
-	// result, err := p.redisClient.BLPop(ctx, 0, MainNotificationQueue).Result()
-	// if err != nil {
-	// 	if err != redis.Nil {
-	// 		p.logger.WithError(err).Error("Error dequeuing from main notification queue")
-	// 	}
-	// 	return
-	// }
+	notification, err := queues.DequeueRabbitNotification(ctx, p.channel, MainNotificationQueue)
+	if err != nil {
+		p.logger.WithError(err).Error("Error consuming from main notification queue")
+		return
+	}
 
-	// if len(result) != 2 {
-	// 	p.logger.Error("Unexpected result format from Redis")
-	// 	return
-	// }
-
-	// var notification models.Notification
-	// err = json.Unmarshal([]byte(result[1]), &notification)
-	// if err != nil {
-	// 	p.logger.WithError(err).Error("Error unmarshaling notification")
-	// 	return
-	// }
+	if notification == nil {
+		// fmt.Println("No notification in the queue yet")
+		return
+	}
 
 	// Set initial status and timestamps
 	notification.Status = "pending"
@@ -104,14 +95,7 @@ func (p *MainNotificationWorker) distributeNotification(ctx context.Context, not
 		return
 	}
 
-	// notificationJSON, err := json.Marshal(notification)
-	// if err != nil {
-	// 	p.logger.WithError(err).Error("Error marshaling notification for distribution")
-	// 	return
-	// }
-
-	err := queues.EnqueueNotification(ctx, p.redisClient, targetQueue, *notification)
-	// err = p.redisClient.RPush(ctx, targetQueue, notificationJSON).Err()
+	err := queues.EnqueueRabbitNotification(ctx, p.channel, targetQueue, *notification)
 	if err != nil {
 		p.logger.WithError(err).WithField("queue", targetQueue).Error("Error pushing to specific queue")
 		return

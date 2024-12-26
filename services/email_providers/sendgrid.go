@@ -4,7 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"notify/config"
 	"notify/models"
+
+	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
 type SendGridProvider struct{}
@@ -19,9 +23,32 @@ func (s *SendGridProvider) Send(ctx context.Context, notification models.Notific
 
 	log.Printf("SendGrid: Sending email to %s with subject %s", payload["to"], payload["subject"])
 
+	// SendEmail()
 	// Simulate sending email via SendGrid
 	// Normally here you'd call SendGrid's API to send the email
 	return nil
+}
+
+func SendEmail() {
+	sg := sendgrid.NewSendClient(config.AppConfig.SendGridApiKey)
+	from := mail.NewEmail("No Reply", config.AppConfig.FromEmail)
+	subject := "Welcome To Aqary International and"
+	to := mail.NewEmail("Junaid Tariq", "j.tariq@aqaryint.com")
+	message := mail.NewV3MailInit(from, subject, to)
+
+	// Create personalization and set dynamic template data
+	personalization := mail.NewPersonalization()
+	personalization.AddTos(to)
+	personalization.SetDynamicTemplateData("user_name", "Junaid Tariq")
+
+	message.Personalizations = append(message.Personalizations, personalization)
+	message.SetTemplateID("d-328983b366fe4d06a295e2df80b57471")
+
+	response, err := sg.Send(message)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println(response.StatusCode)
 }
 
 // SendGrid processes the email notification using the SendGrid provider

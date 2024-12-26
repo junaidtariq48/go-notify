@@ -31,10 +31,22 @@ func main() {
 
 	defer redisClient.Close()
 
+	// Initialize RabbitMQ connection
+	// rabbitMQConn := amqp.InitRabbitMQ()
+	// defer rabbitMQConn.Close()
+
+	// rabbitMQChannel, erre := rabbitMQConn.Channel()
+	// if erre != nil {
+	// 	log.Fatalf("Failed to open RabbitMQ channel: %s", erre)
+	// }
+
+	// defer rabbitMQChannel.Close()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// Create main notification processor
+	// mainProcessor := workersRabbit.NewMainNotificationWorker(rabbitMQChannel, db, config.Logger)
 	mainProcessor := workers.NewMainNotificationWorker(redisClient, db, config.Logger)
 
 	// Create workers

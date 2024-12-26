@@ -3,16 +3,17 @@ package queues
 import (
 	"context"
 	"encoding/json"
+	constants "notify/contants"
 	"notify/models"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
-func EnqueueNotification(ctx context.Context, notificationType string, notification models.Notification) error {
+func EnqueueNotification(ctx context.Context, redisClient *redis.Client, notificationType string, notification models.Notification) error {
 	// Enqueue the notification in Redis based on type
-	client := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
+	// client := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
 	data, _ := json.Marshal(notification)
-	return client.RPush(ctx, "queue:"+notificationType, data).Err()
+	return redisClient.RPush(ctx, constants.QUEUE_PREFIX+notificationType, data).Err()
 }
 
 func DequeueNotification(ctx context.Context, redisClient *redis.Client, queueName string) (*models.Notification, error) {

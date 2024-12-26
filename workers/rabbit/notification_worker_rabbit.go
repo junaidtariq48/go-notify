@@ -1,4 +1,4 @@
-package workers
+package workersRabbit
 
 import (
 	"context"
@@ -8,33 +8,33 @@ import (
 	"notify/repositories"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
+	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type NotificationProcessor func(context.Context, repositories.Repositories, models.Notification) error
 
 type NotificationWorker struct {
-	redisClient *redis.Client
-	db          *mongo.Client
-	queueName   string
-	processor   NotificationProcessor
-	repo        *repositories.Repositories
+	channel   *amqp.Channel
+	db        *mongo.Client
+	queueName string
+	processor NotificationProcessor
+	repo      *repositories.Repositories
 }
 
-func NewNotificationWorker(redisClient *redis.Client, db *mongo.Client, queueName string, processor NotificationProcessor) *NotificationWorker {
+func NewNotificationWorker(channel *amqp.Channel, db *mongo.Client, queueName string, processor NotificationProcessor) *NotificationWorker {
 	return &NotificationWorker{
-		redisClient: redisClient,
-		db:          db,
-		queueName:   queueName,
-		processor:   processor,
-		repo:        repositories.NewRepositories(db),
+		channel:   channel,
+		db:        db,
+		queueName: queueName,
+		processor: processor,
+		repo:      repositories.NewRepositories(db),
 	}
 }
 
 func (w *NotificationWorker) Start(ctx context.Context) {
-	config.Logger.Info("Starting email notification processor")
+	config.Logger.Info("Starting notification processor")
 
 	for {
 		select {
@@ -47,12 +47,11 @@ func (w *NotificationWorker) Start(ctx context.Context) {
 }
 
 func (w *NotificationWorker) processNotification(ctx context.Context) {
-	notification, err := queues.DequeueNotification(ctx, w.redisClient, w.queueName)
+	// Dequeue notification from RabbitMQ
+	notification, err := queues.DequeueRabbitNotification(ctx, w.channel, w.queueName)
 	if err != nil {
-		if err != redis.Nil {
-			config.Logger.WithError(err).Errorf("Error dequeuing %s notification", w.queueName)
-		}
-		time.Sleep(1 * time.Second)
+		config.Logger.WithError(err).Errorf("Error dequeuing %s notification", w.queueName)
+		time.Sleep(10 * time.Second)
 		return
 	}
 
@@ -66,6 +65,7 @@ func (w *NotificationWorker) processNotification(ctx context.Context) {
 		"provider":        notification.Provider,
 	}).Infof("Processing %s notification", w.queueName)
 
+	// Process the notification
 	err = w.processor(ctx, *w.repo, *notification)
 	if err != nil {
 		config.Logger.WithFields(logrus.Fields{

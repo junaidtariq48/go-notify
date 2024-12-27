@@ -2,7 +2,6 @@ package email_providers
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"notify/config"
 	"notify/models"
@@ -16,10 +15,10 @@ type SendGridProvider struct{}
 // SendGrid processes the email notification using the SendGrid provider
 func (s *SendGridProvider) Send(ctx context.Context, notification models.Notification) error {
 	var payload map[string]interface{}
-	err := json.Unmarshal([]byte(notification.Payload), &payload)
-	if err != nil {
-		return err
-	}
+	// err := json.Unmarshal([]byte(notification.Payload), &payload)
+	// if err != nil {
+	// 	return err
+	// }
 
 	log.Printf("SendGrid: Sending email to %s with subject %s", payload["to"], payload["subject"])
 

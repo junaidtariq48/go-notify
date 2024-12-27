@@ -14,6 +14,20 @@ func InitRabbitMQ() *amqp.Connection {
 		log.Fatalf("Failed to connect to RabbitMQ: %s", err)
 	}
 
-	log.Println("Rabbit is running.......")
+	log.Println("Hala wallaaa.......")
 	return conn
+}
+
+func DeclareQueue(channel *amqp.Channel, queueName string) {
+	_, err := channel.QueueDeclare(
+		queueName,
+		true,  // durable
+		false, // auto-delete
+		false, // exclusive
+		false, // no-wait
+		nil,   // arguments
+	)
+	if err != nil {
+		log.Fatalf("Failed to declare queue %s: %v", queueName, err)
+	}
 }

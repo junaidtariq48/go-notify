@@ -2,7 +2,6 @@ package processors
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"notify/config"
 	"notify/models"
@@ -15,10 +14,10 @@ import (
 func EmailProcessor(ctx context.Context, repo repositories.Repositories, notification models.Notification) error {
 
 	var payload map[string]interface{}
-	err := json.Unmarshal([]byte(notification.Payload), &payload)
-	if err != nil {
-		return err
-	}
+	// err := json.Unmarshal([]byte(notification.Payload), &payload)
+	// if err != nil {
+	// 	return err
+	// }
 
 	dynamicData, ok := payload["data"].(map[string]interface{})
 	if !ok {
@@ -37,11 +36,11 @@ func EmailProcessor(ctx context.Context, repo repositories.Repositories, notific
 
 	var emailModel models.Email
 
-	emailModel.To = payload["to"].(string)
-	emailModel.From = config.AppConfig.FromEmail
-	emailModel.Body = dynamicData
-	emailModel.NotificaitonID = notification.ID
-	emailModel.Status = "pending"
+	// emailModel.To = payload["to"].(string)
+	// emailModel.From = config.AppConfig.FromEmail
+	// emailModel.Body = dynamicData
+	// emailModel.NotificaitonID = notification.ID
+	// emailModel.Status = "pending"
 
 	// Save the notification to MongoDB
 	insertedID, err := repo.EmailRepo.SaveEmail(ctx, &emailModel)

@@ -12,11 +12,11 @@ services:
     volumes:
       - mongo_data:/data/db
 
-  redis:
-    image: redis:alpine
-    container_name: redis
-    ports:
-      - "6379:6379"
+  # redis:
+  #   image: redis:alpine
+  #   container_name: redis
+  #   ports:
+  #     - "6379:6379"
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -40,8 +40,8 @@ services:
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
     depends_on:
       - mongo
-      - redis
       - rabbitmq
+      # - redis
 
 volumes:
   mongo_data:

@@ -26,8 +26,8 @@ func NewEmailRepository(db *mongo.Client) *EmailRepository {
 
 // SaveEmail saves a new notification in the MongoDB
 func (r *EmailRepository) SaveEmail(ctx context.Context, email *models.Email) (primitive.ObjectID, error) {
-	email.CreatedAt = time.Now()
-	email.UpdatedAt = time.Now()
+	// email.CreatedAt = time.Now()
+	// email.UpdatedAt = time.Now()
 
 	result, err := r.Collection.InsertOne(context.TODO(), email)
 	if err != nil {

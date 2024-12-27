@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"notify/config"
 	"notify/controllers"
+	"notify/pkg/amqp"
 	"notify/pkg/db"
 	"notify/pkg/redis"
 	"notify/processors"
@@ -32,26 +32,26 @@ func main() {
 	defer redisClient.Close()
 
 	// Initialize RabbitMQ connection
-	// rabbitMQConn := amqp.InitRabbitMQ()
-	// defer rabbitMQConn.Close()
+	rabbitMQConn := amqp.InitRabbitMQ()
+	defer rabbitMQConn.Close()
 
-	// rabbitMQChannel, erre := rabbitMQConn.Channel()
-	// if erre != nil {
-	// 	log.Fatalf("Failed to open RabbitMQ channel: %s", erre)
-	// }
+	rabbitMQChannel, err := rabbitMQConn.Channel()
+	if err != nil {
+		log.Fatalf("Failed to open a channel: %v", err)
+	}
+	defer rabbitMQChannel.Close()
 
-	// defer rabbitMQChannel.Close()
+	// Declare all the queues here
+	amqp.DeclareQueue(rabbitMQChannel, workers.MainNotificationQueue)
+	amqp.DeclareQueue(rabbitMQChannel, workers.EmailQueue)
+	amqp.DeclareQueue(rabbitMQChannel, workers.SMSQueue)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// Create main notification processor
-	// mainProcessor := workersRabbit.NewMainNotificationWorker(rabbitMQChannel, db, config.Logger)
-	mainProcessor := workers.NewMainNotificationWorker(redisClient, db, config.Logger)
-
-	// Create workers
-	emailWorker := workers.NewNotificationWorker(redisClient, db, workers.EmailQueue, processors.EmailProcessor)
-	// smsWorker := workers.NewNotificationWorker(redisClient, db, "sms_queue", processors.SMSProcessor)
+	mainProcessor := workers.NewMainNotificationWorker(rabbitMQChannel, db, config.Logger)
+	emailWorker := workers.NewNotificationWorker(rabbitMQChannel, db, workers.EmailQueue, processors.EmailProcessor)
 
 	// Start workers
 	go mainProcessor.Start(ctx)
@@ -59,11 +59,10 @@ func main() {
 	// go smsWorker.Start(ctx)
 
 	// Initialize the router
-	router := controllers.InitRouter(redisClient, db)
+	router := controllers.InitRouter(ctx, rabbitMQChannel, db)
 
-	err := http.ListenAndServe(config.AppConfig.ServerPort, router)
-	fmt.Println(err)
-	if err != nil {
+	err1 := http.ListenAndServe(config.AppConfig.ServerPort, router)
+	if err1 != nil {
 		log.Fatalf("Failed to start the server: %v", err)
 	}
 

@@ -1,18 +1,18 @@
-package workersRabbit
+package workers
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"notify/config"
 	"notify/models"
 	"notify/queues"
 	"notify/repositories"
-
-	"github.com/streadway/amqp"
 )
 
 const (
@@ -38,48 +38,42 @@ func NewMainNotificationWorker(channel *amqp.Channel, db *mongo.Client, logger *
 }
 
 func (p *MainNotificationWorker) Start(ctx context.Context) {
-	p.logger.Info("Starting main notification Worker listening to rabbit....")
+	p.logger.Info("Starting main notification worker")
+
+	messages, err := queues.ConsumeNotification(ctx, p.channel, MainNotificationQueue)
+	if err != nil {
+		p.logger.WithError(err).Fatal("Failed to start consuming notifications")
+	}
 
 	for {
 		select {
 		case <-ctx.Done():
-			p.logger.Info("Stopping main notification Worker")
+			p.logger.Info("Stopping main notification worker")
 			return
-		default:
-			p.processMainQueue(ctx)
+		case msg := <-messages:
+			var notification models.Notification
+			err := json.Unmarshal(msg.Body, &notification)
+			if err != nil {
+				p.logger.WithError(err).Error("Failed to parse notification")
+				continue
+			}
+			p.processNotification(ctx, &notification)
 		}
 	}
 }
 
-func (p *MainNotificationWorker) processMainQueue(ctx context.Context) {
-
-	notification, err := queues.DequeueRabbitNotification(ctx, p.channel, MainNotificationQueue)
-	if err != nil {
-		p.logger.WithError(err).Error("Error consuming from main notification queue")
-		return
-	}
-
-	if notification == nil {
-		// fmt.Println("No notification in the queue yet")
-		return
-	}
-
-	// Set initial status and timestamps
+func (p *MainNotificationWorker) processNotification(ctx context.Context, notification *models.Notification) {
 	notification.Status = "pending"
 	notification.CreatedAt = time.Now()
 	notification.UpdatedAt = time.Now()
 
-	// Save the notification to MongoDB
 	insertedID, err := p.repo.NotificationRepo.SaveNotification(ctx, notification)
 	if err != nil {
-		config.Logger.WithFields(logrus.Fields{
-			"type":         notification.Type,
-			"notification": notification,
-		}).Error("Error Processing notification")
+		config.Logger.WithError(err).Error("Error saving notification")
+		return
 	}
 
 	notification.ID = insertedID.Hex()
-
 	p.distributeNotification(ctx, notification)
 }
 
@@ -95,15 +89,8 @@ func (p *MainNotificationWorker) distributeNotification(ctx context.Context, not
 		return
 	}
 
-	err := queues.EnqueueRabbitNotification(ctx, p.channel, targetQueue, *notification)
+	err := queues.PublishNotification(ctx, p.channel, targetQueue, *notification)
 	if err != nil {
-		p.logger.WithError(err).WithField("queue", targetQueue).Error("Error pushing to specific queue")
-		return
+		p.logger.WithError(err).WithField("queue", targetQueue).Error("Failed to publish notification to queue")
 	}
-
-	p.logger.WithFields(logrus.Fields{
-		"notification_id": notification.ID,
-		"type":            notification.Type,
-		"queue":           targetQueue,
-	}).Info("Notification distributed to specific queue")
 }

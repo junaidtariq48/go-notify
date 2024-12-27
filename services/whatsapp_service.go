@@ -1,11 +1,8 @@
 package services
 
 import (
-	"fmt"
-	"log"
 	"notify/config"
 	"notify/models"
-	"notify/services/whatsapp_providers"
 
 	"github.com/sirupsen/logrus"
 )
@@ -22,19 +19,19 @@ func SendWhatsApp(notification models.Notification) error {
 
 	config.Logger.WithFields(logrus.Fields{
 		"notification_id": notification.ID,
-		"provider":        notification.Provider,
+		// "provider":        notification.Provider,
 	}).Info("Sending WhatsApp notification")
 
 	// Select the WhatsApp provider based on notification.Provider
-	switch notification.Provider {
-	case "twilio":
-		provider = &whatsapp_providers.TwilioWhatsAppProvider{}
-	// case "another_whatsapp_provider":
-	//     return whatsapp_providers.AnotherWhatsAppProvider(notification)
-	default:
-		log.Println("Unsupported WhatsApp provider:", notification.Provider)
-		return fmt.Errorf("unsupported WhatsApp provider: %s", notification.Provider)
-	}
+	// switch notification.Provider {
+	// case "twilio":
+	// 	provider = &whatsapp_providers.TwilioWhatsAppProvider{}
+	// // case "another_whatsapp_provider":
+	// //     return whatsapp_providers.AnotherWhatsAppProvider(notification)
+	// default:
+	// 	log.Println("Unsupported WhatsApp provider:", notification.Provider)
+	// 	return fmt.Errorf("unsupported WhatsApp provider: %s", notification.Provider)
+	// }
 
 	return provider.Send(notification)
 }

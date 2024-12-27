@@ -1,7 +1,6 @@
 package sms_providers
 
 import (
-	"encoding/json"
 	"log"
 	"notify/models"
 )
@@ -12,10 +11,10 @@ type TwilioProvider struct{}
 // Twilio processes the SMS notification using the Twilio provider
 func (t *TwilioProvider) Send(notification models.Notification) error {
 	var payload map[string]interface{}
-	err := json.Unmarshal([]byte(notification.Payload), &payload)
-	if err != nil {
-		return err
-	}
+	// err := json.Unmarshal([]byte(notification.Payload), &payload)
+	// if err != nil {
+	// 	return err
+	// }
 
 	log.Printf("Twilio: Sending SMS to %s with message %s", payload["to"], payload["message"])
 

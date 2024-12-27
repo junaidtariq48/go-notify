@@ -1,11 +1,8 @@
 package services
 
 import (
-	"fmt"
-	"log"
 	"notify/config"
 	"notify/models"
-	"notify/services/push_providers"
 
 	"github.com/sirupsen/logrus"
 )
@@ -32,19 +29,19 @@ func SendPushNotification(notification models.Notification) error {
 
 	config.Logger.WithFields(logrus.Fields{
 		"notification_id": notification.ID,
-		"provider":        notification.Provider,
+		// "provider":        notification.Provider,
 	}).Info("Sending push notification")
 
 	// Select the push provider based on notification.Provider
-	switch notification.Provider {
-	case "firebase":
-		provider = &push_providers.FirebaeProvider{}
-	case "onesignal":
-		provider = &push_providers.OneSignalProvider{}
-	default:
-		log.Println("Unsupported push provider:", notification.Provider)
-		return fmt.Errorf("unsupported push provider: %s", notification.Provider)
-	}
+	// switch notification.Provider {
+	// case "firebase":
+	// 	provider = &push_providers.FirebaeProvider{}
+	// case "onesignal":
+	// 	provider = &push_providers.OneSignalProvider{}
+	// default:
+	// 	log.Println("Unsupported push provider:", notification.Provider)
+	// 	return fmt.Errorf("unsupported push provider: %s", notification.Provider)
+	// }
 
 	return provider.Send(notification)
 }

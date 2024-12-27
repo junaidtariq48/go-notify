@@ -1,18 +1,10 @@
 package models
 
-import (
-	"time"
-)
-
 type Email struct {
-	ID             string      `bson:"_id,omitempty"`
-	NotificaitonID string      `bson:"notification_id"`
-	To             string      `bson:"to"`
-	From           string      `bson:"from"`
-	Subject        string      `bson:"Subject"`
-	Body           interface{} `bson:"Body"`
-	response       string      `bson:"Response"`
-	Status         string      `bson:"status"`
-	CreatedAt      time.Time   `bson:"created_at"`
-	UpdatedAt      time.Time   `bson:"updated_at"`
+	ID             string            `json:"id" bson:"_id,omitempty"`
+	NotificationID string            `json:"notification_id" bson:"notification_id"`
+	Recipient      string            `json:"recipient" bson:"recipient"`       // Email address
+	Subject        string            `json:"subject" bson:"subject"`           // Email subject
+	TemplateID     string            `json:"template_id" bson:"template_id"`   // SendGrid dynamic template ID
+	DynamicData    map[string]string `json:"dynamic_data" bson:"dynamic_data"` // Variables for the template
 }

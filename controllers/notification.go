@@ -1,13 +1,15 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"notify/config"
 	"notify/models"
 	"notify/queues"
+	"notify/workers"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -16,7 +18,7 @@ type NotificationRequest struct {
 	Payload string `json:"payload"`
 }
 
-func CreateNotification(w http.ResponseWriter, r *http.Request, redisClient *redis.Client, db *mongo.Client) {
+func CreateNotification(w http.ResponseWriter, r *http.Request, ctx context.Context, channel *amqp.Channel, db *mongo.Client) {
 	var notification models.Notification
 
 	// Decode the incoming request payload into the Notification struct
@@ -26,15 +28,12 @@ func CreateNotification(w http.ResponseWriter, r *http.Request, redisClient *red
 		return
 	}
 
-	err = queues.EnqueueNotification(r.Context(), redisClient, "notifications_queue", notification)
-
-	if err != nil {
-		config.Logger.WithError(err).Error("Failed to enqueue notification")
-		http.Error(w, "Failed to enqueue notification", http.StatusInternalServerError)
-		return
+	err1 := queues.PublishNotification(ctx, channel, workers.MainNotificationQueue, notification)
+	if err1 != nil {
+		config.Logger.WithError(err).WithField("queue", workers.MainNotificationQueue).Error("Failed to publish notification to queue")
 	}
 
-	config.Logger.WithField("notification_id", notification.Type).Info("Notification enqueued successfully")
+	config.Logger.WithField("Notification Type:", notification.Type).Info("Notification enqueued successfully")
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{

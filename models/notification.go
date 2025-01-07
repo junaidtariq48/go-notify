@@ -7,6 +7,7 @@ import (
 type Notification struct {
 	ID            string                 `json:"id" bson:"_id,omitempty"`    // MongoDB ID
 	Type          string                 `json:"type" bson:"type"`           // "email" or "sms"
+	Provider      string                 `json:"provider" bson:"provider"`   // "twilio" or "nexmo"
 	Status        string                 `json:"status" bson:"status"`       // "pending", "sent", "failed", etc.
 	Recipient     string                 `json:"recipient" bson:"recipient"` // Email address or phone number
 	Payload       map[string]interface{} `json:"payload" bson:"payload"`     // Custom data (for email templates, SMS, etc.)

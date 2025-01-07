@@ -6,6 +6,7 @@ import (
 
 type Repositories struct {
 	EmailRepo        *EmailRepository
+	SmsRepo          *SmsRepository
 	NotificationRepo *NotificationRepository
 }
 
@@ -13,6 +14,7 @@ type Repositories struct {
 func NewRepositories(db *mongo.Client) *Repositories {
 	return &Repositories{
 		EmailRepo:        NewEmailRepository(db),
+		SmsRepo:          NewSmsRepository(db),
 		NotificationRepo: NewNotificationRepository(db),
 	}
 }

@@ -58,11 +58,6 @@ func EmailProcessor(ctx context.Context, repo repositories.Repositories, notific
 
 }
 
-// SMSProcessor handles processing of SMS notifications
-// func SMSProcessor(ctx context.Context, notification models.Notification) error {
-// 	return services.SendSMS(ctx, notification)
-// }
-
 // You can add more processor functions here as needed
 // For example:
 // func PushNotificationProcessor(ctx context.Context, notification models.Notification) error {

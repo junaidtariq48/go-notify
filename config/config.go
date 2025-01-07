@@ -9,22 +9,25 @@ import (
 )
 
 type Config struct {
-	Environment     string `mapstructure:"ENVIRONMENT"`
-	Host            string `mapstructure:"HOST"`
-	AppVersion      string `mapstructure:"APP_VERSION"`
-	QueueSystem     string `mapstructure:"QUEUE_SYSTEM"`
-	MongoURI        string `mapstructure:"MONGO_URI"`
-	MongoDB         string `mapstructure:"MONGO_DB"`
-	MongoAuthSource string `mapstructure:"MONGO_AUTH_SOURCE"`
-	MongoUser       string `mapstructure:"MONGO_USER"`
-	MongoPassword   string `mapstructure:"MONGO_PASSWORD"`
-	RabbitMQUrl     string `mapstructure:"RABBITMQ_URL"`
-	RedisHost       string `mapstructure:"REDIS_HOST"`
-	RedisPort       string `mapstructure:"REDIS_PORT"`
-	RedisPass       string `mapstructure:"REDIS_PASSWORD"`
-	ServerPort      string `mapstructure:"APP_PORT"`
-	SendGridApiKey  string `mapstructure:"SENDGRID_API_KEY"`
-	FromEmail       string `mapstructure:"FROM_EMAIL"`
+	Environment      string `mapstructure:"ENVIRONMENT"`
+	Host             string `mapstructure:"HOST"`
+	AppVersion       string `mapstructure:"APP_VERSION"`
+	QueueSystem      string `mapstructure:"QUEUE_SYSTEM"`
+	MongoURI         string `mapstructure:"MONGO_URI"`
+	MongoDB          string `mapstructure:"MONGO_DB"`
+	MongoAuthSource  string `mapstructure:"MONGO_AUTH_SOURCE"`
+	MongoUser        string `mapstructure:"MONGO_USER"`
+	MongoPassword    string `mapstructure:"MONGO_PASSWORD"`
+	RabbitMQUrl      string `mapstructure:"RABBITMQ_URL"`
+	RedisHost        string `mapstructure:"REDIS_HOST"`
+	RedisPort        string `mapstructure:"REDIS_PORT"`
+	RedisPass        string `mapstructure:"REDIS_PASSWORD"`
+	ServerPort       string `mapstructure:"APP_PORT"`
+	SendGridApiKey   string `mapstructure:"SENDGRID_API_KEY"`
+	FromEmail        string `mapstructure:"FROM_EMAIL"`
+	TwilioAccountSID string `mapstructure:"TWILIO_ACCOUNT_SID_AQ"`
+	TwilioVerifySID  string `mapstructure:"TWILIO_VERIFY_SID_AQ"`
+	TwilioAuthToken  string `mapstructure:"TWILIO_AUTH_TOKEN_AQ"`
 }
 
 var AppConfig Config

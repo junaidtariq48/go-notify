@@ -33,7 +33,7 @@ func SMSProcessor(ctx context.Context, repo repositories.Repositories, notificat
 	res, err := services.SendSMS(ctx, smsNotification)
 
 	if err != nil {
-		repo.SmsRepo.UpdateSMSResponse(ctx, smsNotification.ID, string(res), "error")
+		repo.SmsRepo.UpdateSMSResponse(ctx, smsNotification.ID, string(err.Error()), "error")
 		return err
 	}
 

@@ -31,6 +31,7 @@ func SendSMS(ctx context.Context, notification models.SMSNotification) ([]byte, 
 	case "nexmo":
 		// provider = &sms_providers.NexmoProvider{}
 	default:
+		// provider = &sms_providers.TwilioProvider{} // default provider is twilio
 		log.Println("Unsupported SMS provider:", notification.Provider)
 		return nil, fmt.Errorf("unsupported SMS provider: %s", notification.Provider)
 	}

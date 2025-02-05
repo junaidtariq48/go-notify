@@ -19,6 +19,8 @@ func (t *TwilioProvider) Send(notification models.SMSNotification) ([]byte, erro
 	sid := config.AppConfig.TwilioAccountSID
 	token := config.AppConfig.TwilioAuthToken
 
+	fmt.Println(notification)
+
 	client := twilio.NewRestClientWithParams(twilio.ClientParams{
 		Username: sid,
 		Password: token,

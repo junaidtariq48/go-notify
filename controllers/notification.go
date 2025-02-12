@@ -40,29 +40,3 @@ func CreateNotification(w http.ResponseWriter, r *http.Request, ctx context.Cont
 		"status": "success",
 	})
 }
-
-// func CreateNotification(w http.ResponseWriter, r *http.Request, rabbit *amqp.Channel, db *mongo.Client) {
-// 	var notification models.Notification
-
-// 	// Decode the incoming request payload into the Notification struct
-// 	err := json.NewDecoder(r.Body).Decode(&notification)
-// 	if err != nil {
-// 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	err = queues.EnqueueRabbitNotification(r.Context(), rabbit, "notifications_queue", notification)
-
-// 	if err != nil {
-// 		config.Logger.WithError(err).Error("Failed to enqueue notification")
-// 		http.Error(w, "Failed to enqueue notification", http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	config.Logger.WithField("notification_id", notification.Type).Info("Notification enqueued successfully")
-
-// 	w.WriteHeader(http.StatusCreated)
-// 	json.NewEncoder(w).Encode(map[string]interface{}{
-// 		"status": "success",
-// 	})
-// }

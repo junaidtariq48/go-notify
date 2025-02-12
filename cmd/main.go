@@ -26,10 +26,6 @@ func main() {
 	db := db.InitMongo()
 	defer db.Disconnect(context.Background())
 
-	// redisClient := redis.InitRedis()
-
-	// defer redisClient.Close()
-
 	// Initialize RabbitMQ connection
 	rabbitMQConn := amqp.InitRabbitMQ()
 	defer rabbitMQConn.Close()
@@ -50,12 +46,12 @@ func main() {
 
 	// Create main notification processor
 	mainProcessor := workers.NewMainNotificationWorker(rabbitMQChannel, db, config.Logger)
-	// emailWorker := workers.NewNotificationWorker(rabbitMQChannel, db, workers.EmailQueue, processors.EmailProcessor)
+	emailWorker := workers.NewNotificationWorker(rabbitMQChannel, db, workers.EmailQueue, processors.EmailProcessor)
 	smsVerificationWorker := workers.NewNotificationWorker(rabbitMQChannel, db, workers.SMSQueue, processors.SMSProcessor)
 
 	// Start workers
 	go mainProcessor.Start(ctx)
-	// go emailWorker.Start(ctx)
+	go emailWorker.Start(ctx)
 	go smsVerificationWorker.Start(ctx)
 
 	// Initialize the router

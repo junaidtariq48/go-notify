@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"notify/config"
 	constants "notify/contants"
@@ -25,10 +24,7 @@ func NewEmailRepository(db *mongo.Client) *EmailRepository {
 }
 
 // SaveEmail saves a new notification in the MongoDB
-func (r *EmailRepository) SaveEmail(ctx context.Context, email *models.Email) (primitive.ObjectID, error) {
-	// email.CreatedAt = time.Now()
-	// email.UpdatedAt = time.Now()
-
+func (r *EmailRepository) SaveEmail(ctx context.Context, email *models.EmailNotification) (primitive.ObjectID, error) {
 	result, err := r.Collection.InsertOne(context.TODO(), email)
 	if err != nil {
 		log.Printf("Error inserting email into MongoDB: %v", err)
@@ -60,7 +56,7 @@ func (r *EmailRepository) UpdateEmailStatus(id string, status string) error {
 	return err
 }
 
-func (r *EmailRepository) UpdateEmailResposne(id string, response string) error {
+func (r *EmailRepository) UpdateEmailResposne(ctx context.Context, id string, response string, status string) error {
 	objectID, errr := primitive.ObjectIDFromHex(id)
 	if errr != nil {
 		log.Fatal(errr)
@@ -70,10 +66,11 @@ func (r *EmailRepository) UpdateEmailResposne(id string, response string) error 
 	update := bson.M{
 		"$set": bson.M{
 			"response":   response,
+			"status":     status,
 			"updated_at": time.Now(),
 		},
 	}
-	fmt.Println(filter)
+
 	_, err := r.Collection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		log.Println("Failed to update email response:", err)

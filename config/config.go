@@ -25,6 +25,7 @@ type Config struct {
 	ServerPort       string `mapstructure:"APP_PORT"`
 	SendGridApiKey   string `mapstructure:"SENDGRID_API_KEY"`
 	FromEmail        string `mapstructure:"FROM_EMAIL"`
+	FromName         string `mapstructure:"FROM_NAME"`
 	TwilioAccountSID string `mapstructure:"TWILIO_ACCOUNT_SID_AQ"`
 	TwilioVerifySID  string `mapstructure:"TWILIO_VERIFY_SID_AQ"`
 	TwilioAuthToken  string `mapstructure:"TWILIO_AUTH_TOKEN_AQ"`

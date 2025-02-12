@@ -18,8 +18,8 @@ func SMSProcessor(ctx context.Context, repo repositories.Repositories, notificat
 	smsNotification.Recipient = notification.Recipient
 	smsNotification.Status = "pending"
 	smsNotification.NotificationID = notification.ID
-	smsNotification.Message = notification.Payload["message"].(string)
-	smsNotification.Type = notification.Payload["type"].(string)
+	smsNotification.Message = notification.Payload["message"]
+	smsNotification.Type = notification.Payload["type"]
 	smsNotification.Provider = notification.Provider
 
 	insertedID, err := repo.SmsRepo.SaveSMS(ctx, &smsNotification)

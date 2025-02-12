@@ -2,64 +2,43 @@ package processors
 
 import (
 	"context"
-	"fmt"
 	"notify/config"
 	"notify/models"
 	"notify/repositories"
 	"notify/services"
-
-	"github.com/sirupsen/logrus"
+	"time"
 )
 
 func EmailProcessor(ctx context.Context, repo repositories.Repositories, notification models.Notification) error {
+	var emailNotification models.EmailNotification
 
-	var payload map[string]interface{}
-	// err := json.Unmarshal([]byte(notification.Payload), &payload)
-	// if err != nil {
-	// 	return err
-	// }
+	emailNotification.CreatedAt = time.Now()
+	emailNotification.UpdatedAt = time.Now()
+	emailNotification.Recipient = notification.Recipient
+	emailNotification.Status = "pending"
+	emailNotification.NotificationID = notification.ID
+	emailNotification.DynamicData = notification.Payload
+	emailNotification.Type = notification.Type
+	emailNotification.Provider = notification.Provider
+	emailNotification.TemplateID = notification.TemplateId
+	emailNotification.RecipientName = notification.RecipientName
 
-	dynamicData, ok := payload["data"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("invalid 'data' field")
+	insertedID, err := repo.EmailRepo.SaveEmail(ctx, &emailNotification)
+	if err != nil {
+		config.Logger.WithError(err).Error("Error saving email notification")
+		return err
 	}
 
-	// Convert dynamicData to map[string]string
-	dynamicTemplateData := make(map[string]string)
-	for key, value := range dynamicData {
-		if strValue, ok := value.(string); ok {
-			dynamicTemplateData[key] = strValue
-		} else {
-			return fmt.Errorf("invalid value for key '%s'", key)
-		}
-	}
+	emailNotification.ID = insertedID.Hex()
 
-	var emailModel models.Email
-
-	// emailModel.To = payload["to"].(string)
-	// emailModel.From = config.AppConfig.FromEmail
-	// emailModel.Body = dynamicData
-	// emailModel.NotificaitonID = notification.ID
-	// emailModel.Status = "pending"
-
-	// Save the notification to MongoDB
-	insertedID, err := repo.EmailRepo.SaveEmail(ctx, &emailModel)
+	res, err := services.SendEmail(ctx, emailNotification)
 
 	if err != nil {
-
-		config.Logger.WithFields(logrus.Fields{
-			"type":         notification.Type,
-			"notification": notification,
-		}).Error("Error Processing notification")
+		repo.EmailRepo.UpdateEmailResposne(ctx, emailNotification.ID, string(err.Error()), "error")
+		return err
 	}
 
-	fmt.Println("::EMAIL::", insertedID)
-	return services.SendEmail(ctx, notification)
+	repo.EmailRepo.UpdateEmailResposne(ctx, emailNotification.ID, string(res), "success")
 
+	return nil
 }
-
-// You can add more processor functions here as needed
-// For example:
-// func PushNotificationProcessor(ctx context.Context, notification models.Notification) error {
-//     return services.SendPushNotification(ctx, notification)
-// }

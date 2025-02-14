@@ -12,12 +12,6 @@ services:
     volumes:
       - mongo_data:/data/db
 
-  # redis:
-  #   image: redis:alpine
-  #   container_name: redis
-  #   ports:
-  #     - "6379:6379"
-
   rabbitmqm:
     image: rabbitmq:3-management
     container_name: rabbitmqm
@@ -41,7 +35,6 @@ services:
     depends_on:
       - mongon
       - rabbitmqm
-    # - redis
 
 volumes:
   mongo_data:

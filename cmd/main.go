@@ -8,7 +8,6 @@ import (
 	"notify/controllers"
 	"notify/pkg/amqp"
 	"notify/pkg/db"
-	"notify/pkg/redis"
 	"notify/processors"
 	"notify/workers"
 	"os"
@@ -26,10 +25,6 @@ func main() {
 	// Initialize MongoDB, Redis, etc.
 	db := db.InitMongo()
 	defer db.Disconnect(context.Background())
-
-	redisClient := redis.InitRedis()
-
-	defer redisClient.Close()
 
 	// Initialize RabbitMQ connection
 	rabbitMQConn := amqp.InitRabbitMQ()
@@ -52,11 +47,12 @@ func main() {
 	// Create main notification processor
 	mainProcessor := workers.NewMainNotificationWorker(rabbitMQChannel, db, config.Logger)
 	emailWorker := workers.NewNotificationWorker(rabbitMQChannel, db, workers.EmailQueue, processors.EmailProcessor)
+	smsVerificationWorker := workers.NewNotificationWorker(rabbitMQChannel, db, workers.SMSQueue, processors.SMSProcessor)
 
 	// Start workers
 	go mainProcessor.Start(ctx)
 	go emailWorker.Start(ctx)
-	// go smsWorker.Start(ctx)
+	go smsVerificationWorker.Start(ctx)
 
 	// Initialize the router
 	router := controllers.InitRouter(ctx, rabbitMQChannel, db)

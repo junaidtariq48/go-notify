@@ -13,21 +13,21 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type EmailRepository struct {
+type SmsRepository struct {
 	Collection *mongo.Collection
 }
 
 // NewNotificationRepository creates a new instance of NotificationRepository
-func NewEmailRepository(db *mongo.Client) *EmailRepository {
-	collection := db.Database(config.AppConfig.MongoDB).Collection(constants.EMAIL_COLLECTION)
-	return &EmailRepository{Collection: collection}
+func NewSmsRepository(db *mongo.Client) *SmsRepository {
+	collection := db.Database(config.AppConfig.MongoDB).Collection(constants.SMS_COLLECTION)
+	return &SmsRepository{Collection: collection}
 }
 
 // SaveEmail saves a new notification in the MongoDB
-func (r *EmailRepository) SaveEmail(ctx context.Context, email *models.EmailNotification) (primitive.ObjectID, error) {
-	result, err := r.Collection.InsertOne(context.TODO(), email)
+func (r *SmsRepository) SaveSMS(ctx context.Context, sms *models.SMSNotification) (primitive.ObjectID, error) {
+	result, err := r.Collection.InsertOne(context.TODO(), sms)
 	if err != nil {
-		log.Printf("Error inserting email into MongoDB: %v", err)
+		log.Printf("Error inserting sms verification into MongoDB: %v", err)
 		return primitive.NilObjectID, err
 	}
 
@@ -35,7 +35,7 @@ func (r *EmailRepository) SaveEmail(ctx context.Context, email *models.EmailNoti
 }
 
 // UpdateEmailStatus updates the status of a notification
-func (r *EmailRepository) UpdateEmailStatus(id string, status string) error {
+func (r *SmsRepository) UpdateSMSStatus(ctx context.Context, id string, status string) error {
 	objectID, errr := primitive.ObjectIDFromHex(id)
 	if errr != nil {
 		log.Fatal(errr)
@@ -56,7 +56,7 @@ func (r *EmailRepository) UpdateEmailStatus(id string, status string) error {
 	return err
 }
 
-func (r *EmailRepository) UpdateEmailResposne(ctx context.Context, id string, response string, status string) error {
+func (r *SmsRepository) UpdateSMSResponse(ctx context.Context, id string, response string, status string) error {
 	objectID, errr := primitive.ObjectIDFromHex(id)
 	if errr != nil {
 		log.Fatal(errr)
@@ -70,10 +70,9 @@ func (r *EmailRepository) UpdateEmailResposne(ctx context.Context, id string, re
 			"updated_at": time.Now(),
 		},
 	}
-
 	_, err := r.Collection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
-		log.Println("Failed to update email response:", err)
+		log.Println("Failed to update sms response:", err)
 	}
 	return err
 }

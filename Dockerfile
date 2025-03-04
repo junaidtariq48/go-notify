@@ -2,7 +2,7 @@
 FROM golang:1.23.4-alpine AS builder
 
 # Install necessary build tools
-RUN apk add --no-cache git
+RUN apk add --no-cache git gcc musl-dev
 
 # Set the working directory
 WORKDIR /app
@@ -16,11 +16,8 @@ RUN go mod download
 # Copy the source code
 COPY . .
 
-# Debug: List files to verify source code is copied
-RUN ls -al /app
-
 # Build the Go application
-RUN go build -o notification-service ./cmd
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o notification-service cmd/main.go
 
 # Stage 2: Create a minimal Docker image for the application
 FROM alpine:latest

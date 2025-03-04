@@ -9,7 +9,7 @@ import (
 type NexmoProvider struct{}
 
 // Nexmo processes the SMS notification using the Nexmo provider
-func (n *NexmoProvider) Send(notification models.Notification) error {
+func (n *NexmoProvider) Send(notification models.SMSNotification) error {
 	var payload map[string]interface{}
 	// err := json.Unmarshal([]byte(notification.Payload), &payload)
 	// if err != nil {

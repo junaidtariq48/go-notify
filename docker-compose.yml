@@ -1,29 +1,23 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  mongo:
+  mongon:
     image: mongo:latest
-    container_name: mongo
+    container_name: mongon
     ports:
-      - "27017:27017"
+      - "27018:27018"
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
     volumes:
       - mongo_data:/data/db
 
-  # redis:
-  #   image: redis:alpine
-  #   container_name: redis
-  #   ports:
-  #     - "6379:6379"
-
-  rabbitmq:
+  rabbitmqm:
     image: rabbitmq:3-management
-    container_name: rabbitmq
+    container_name: rabbitmqm
     ports:
-      - "5672:5672" # RabbitMQ server
-      - "15672:15672" # RabbitMQ management UI
+      - "5673:5673" # RabbitMQ server
+      - "15673:15673" # RabbitMQ management UI
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -34,14 +28,13 @@ services:
     ports:
       - "8080:8080"
     environment:
-      MONGO_URI: mongodb://root:example@mongo:27017
+      MONGO_URI: mongodb://root:example@mongon:27018
       REDIS_ADDR: redis:6379
       REDIS_PASSWORD: ""
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      RABBITMQ_URL: amqp://admin:admin@rabbitmqm:5672/
     depends_on:
-      - mongo
-      - rabbitmq
-      # - redis
+      - mongon
+      - rabbitmqm
 
 volumes:
   mongo_data:

@@ -19,6 +19,7 @@ const (
 	MainNotificationQueue = "notifications_queue"
 	EmailQueue            = "email_queue"
 	SMSQueue              = "sms_queue"
+	SMSVerificationQueue  = "sms_verification_queue"
 )
 
 type MainNotificationWorker struct {
@@ -84,6 +85,8 @@ func (p *MainNotificationWorker) distributeNotification(ctx context.Context, not
 		targetQueue = EmailQueue
 	case "sms":
 		targetQueue = SMSQueue
+	case "sms_verification":
+		targetQueue = SMSVerificationQueue
 	default:
 		p.logger.WithField("type", notification.Type).Error("Unknown notification type")
 		return
